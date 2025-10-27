@@ -1,4 +1,4 @@
-package com.kelompok14.careerlink
+package com.elevatestudio.careerlink
 
 import org.junit.Test
 

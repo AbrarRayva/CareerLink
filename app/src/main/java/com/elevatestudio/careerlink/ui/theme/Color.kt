@@ -1,4 +1,4 @@
-package com.kelompok14.careerlink.ui.theme
+package com.elevatestudio.careerlink.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

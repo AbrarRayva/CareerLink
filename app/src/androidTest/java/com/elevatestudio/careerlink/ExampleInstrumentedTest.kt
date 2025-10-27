@@ -1,4 +1,4 @@
-package com.kelompok14.careerlink
+package com.elevatestudio.careerlink
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.kelompok14.careerlink", appContext.packageName)
+        assertEquals("com.elevatestudio.careerlink", appContext.packageName)
     }
 }

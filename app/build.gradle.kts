@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.kelompok14.careerlink"
+    namespace = "com.elevatestudio.careerlink"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kelompok14.careerlink"
+        applicationId = "com.elevatestudio.careerlink"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
