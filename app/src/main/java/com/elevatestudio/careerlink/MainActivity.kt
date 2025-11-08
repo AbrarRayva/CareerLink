@@ -6,9 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.elevatestudio.careerlink.navigation.AppNavigation
-import com.elevatestudio.careerlink.ui.theme.CareerLinkTheme // Ganti nama tema defaultmu
+import com.elevatestudio.careerlink.navigation.CareerLinkNavGraph
+import com.elevatestudio.careerlink.ui.theme.CareerLinkTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,5 +27,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CareerLinkAppPreview() {
+    CareerLinkTheme{
+        CareerLinkNavGraph()
     }
 }

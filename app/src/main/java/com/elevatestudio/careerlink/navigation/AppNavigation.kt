@@ -1,14 +1,20 @@
 package com.elevatestudio.careerlink.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.elevatestudio.careerlink.ui.screen.OnboardingScreen
 import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignInScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignUpScreen
+import com.elevatestudio.careerlink.ui.mentoring.BookingMentoringScreen
+import com.elevatestudio.careerlink.ui.mentoring.CatatanMentoringScreen
+import com.elevatestudio.careerlink.ui.mentoring.DetailMentoringScreen
+import com.elevatestudio.careerlink.ui.mentoring.JadwalMentoringScreen
 
 object Routes {
     const val SPLASH = "splash"
@@ -92,5 +98,40 @@ fun AppNavigation() {
             )
         }
 
+    }
+}
+@Composable
+fun CareerLinkNavGraph() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "jadwal_mentoring") {
+        // 1. Daftar Jadwal
+        composable("jadwal_mentoring") {
+            JadwalMentoringScreen(navController)
+        }
+
+        // 2. Detail Jadwal
+        composable(
+            route = "detail_mentoring/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
+            DetailMentoringScreen(navController, sessionId)
+        }
+
+        // 3. Booking
+        composable(
+            route = "booking_mentoring/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) {
+            BookingMentoringScreen(navController)
+        }
+
+        // 4. Catatan
+        composable("catatan_mentoring") {
+            CatatanMentoringScreen(navController)
+        }
+
+        // TODO: Tambahkan NotifikasiScreen dan rute lainnya jika diperlukan
     }
 }
