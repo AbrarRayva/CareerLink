@@ -36,7 +36,6 @@ fun AppNavigation() {
         startDestination = Routes.SPLASH
     ) {
 
-
         composable(Routes.SPLASH) {
             SplashScreen(
                 onSplashFinished = {
@@ -80,7 +79,6 @@ fun AppNavigation() {
                     }
                 },
                 onSignUpClicked = { email, password, confirmPassword ->
-                    // ...
                 }
             )
         }
