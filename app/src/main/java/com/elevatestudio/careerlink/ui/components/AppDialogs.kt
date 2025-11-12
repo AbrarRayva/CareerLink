@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info // <-- Ini buat ikon caution 'i'
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -31,20 +31,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
-import com.elevatestudio.careerlink.ui.theme.SecondaryGreen // <-- Import ini buat tombol NO
+import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
 /**
- * Dialog konfirmasi "Yes/No"
- * Dipakai untuk: Terapkan Filter, Kirim Lamaran
+ * Dialog konfirmasi "Yes/No" (Kanan-Kiri)
  */
 @Composable
 fun ConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     title: String,
-    icon: @Composable (() -> Unit)? = null // Parameter ikon tetap ada
+    icon: @Composable (() -> Unit)? = null
 ) {
-    // KITA PAKAI DIALOG BIAR BISA FULL KUSTOMISASI
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -54,12 +52,10 @@ fun ConfirmationDialog(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. Ikon Caution (sesuai request)
-                icon?.invoke() // Panggil ikon yang dikirim dari layar
+                icon?.invoke()
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. Judul
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
@@ -69,15 +65,13 @@ fun ConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 3. Tombol Kiri-Kanan (SESUAI REQUEST)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally) // Atur jarak & posisi
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                 ) {
-                    // Tombol "NO" (kiri)
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f), // Bagi rata
+                        modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = SecondaryGreen
                         ),
@@ -88,11 +82,10 @@ fun ConfirmationDialog(
                         Text("NO")
                     }
 
-                    // Tombol "YES" (kanan)
                     Button(
                         onClick = onConfirm,
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                        modifier = Modifier.weight(1f) // Bagi rata
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("YES")
                     }
@@ -103,14 +96,13 @@ fun ConfirmationDialog(
 }
 
 /**
- * Dialog custom untuk "Lamaran Berhasil Terkirim"
+ * Dialog custom untuk "Lamaran Berhasil Terkirim" (atau sukses lainnya)
  */
 @Composable
 fun SuccessDialog(
     onDismiss: () -> Unit,
     onGoToHome: () -> Unit
 ) {
-    // Dialog ini sudah benar
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -143,8 +135,8 @@ fun SuccessDialog(
                 PrimaryButton(
                     text = "BACK TO HOME",
                     onClick = {
-                        onDismiss() // Tutup dialog
-                        onGoToHome() // Navigasi
+                        onDismiss()
+                        onGoToHome()
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
