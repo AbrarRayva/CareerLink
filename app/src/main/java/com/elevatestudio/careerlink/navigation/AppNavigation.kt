@@ -1,4 +1,3 @@
-// Lokasi: navigation/AppNavigation.kt
 package com.elevatestudio.careerlink.navigation
 
 import androidx.compose.runtime.Composable
@@ -12,7 +11,6 @@ import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignInScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignUpScreen
-// --- IMPORT LAYAR BARU KITA ---
 import com.elevatestudio.careerlink.ui.screen.lowongan.AjukanLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
@@ -26,7 +24,6 @@ object Routes {
     const val SIGN_UP = "signup"
     const val FORGOT_PASSWORD = "forgot_password"
 
-    // --- RUTE BARU UNTUK MODUL LOWONGAN ---
     const val DAFTAR_LOWONGAN = "daftar_lowongan"
     const val NOTIFIKASI = "notifikasi"
     // Ini butuh argumen (ID lowongan)
@@ -34,7 +31,6 @@ object Routes {
     // Ini juga butuh argumen (ID lowongan)
     const val AJUKAN_LOWONGAN = "ajukan_lowongan/{lowonganId}"
 
-    // Helper function biar gampang pindah ke detail/ajuan
     fun detailLowongan(lowonganId: String) = "detail_lowongan/$lowonganId"
     fun ajukanLowongan(lowonganId: String) = "ajukan_lowongan/$lowonganId"
 
@@ -51,7 +47,6 @@ fun AppNavigation() {
         startDestination = Routes.SPLASH // Mulai dari Splash Screen
     ) {
 
-        // --- GRUP OTENTIKASI ---
 
         composable(Routes.SPLASH) {
             SplashScreen(

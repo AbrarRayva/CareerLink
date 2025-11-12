@@ -1,4 +1,3 @@
-// Lokasi: ui/screen/lowongan/AjukanLowonganScreen.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import android.content.Context
@@ -14,7 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Clear // <-- IMPORT BARU UNTUK 'X'
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
@@ -45,7 +44,6 @@ fun AjukanLowonganScreen(
     onBackClick: () -> Unit,
     onGoToHome: () -> Unit
 ) {
-    // (Semua state dan launcher tetap sama)
     val state by viewModel.lamaranState.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -237,8 +235,6 @@ fun AjukanLowonganScreen(
                         Text("Harap Lengkapi Dokumen", style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // --- INI BAGIAN YANG DIPERBARUI ---
-
                         val namaPlaceholder = if (state.namaLengkap.isBlank()) "NamaLengkap" else state.namaLengkap.replace(' ', '_')
 
                         FileUploadBox(
@@ -274,7 +270,6 @@ fun AjukanLowonganScreen(
             item { Spacer(modifier = Modifier.height(80.dp)) } // Spacer buat tombol
         }
 
-        // --- DIALOG-DIALOG (Tidak berubah) ---
         if (showKirimDialog) {
             ConfirmationDialog(
                 onDismiss = { showKirimDialog = false },
