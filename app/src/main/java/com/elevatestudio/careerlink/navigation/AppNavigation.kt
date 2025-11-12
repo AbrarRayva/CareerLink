@@ -1,14 +1,26 @@
 package com.elevatestudio.careerlink.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.elevatestudio.careerlink.ui.screen.OnboardingScreen
 import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignInScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignUpScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.BoothDetailScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.CareerFairScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.CheckInScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.EventDetailScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.EventMapScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.NetworkingScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.NotificationScreen
+
 
 object Routes {
     const val SPLASH = "splash"
@@ -17,6 +29,7 @@ object Routes {
     const val SIGN_UP = "signup"
     const val FORGOT_PASSWORD = "forgot_password"
     // const val HOME = "home"
+    const val CAREER_FAIR = "career_fair"
 }
 
 @Composable
@@ -92,5 +105,49 @@ fun AppNavigation() {
             )
         }
 
+        // CAREER FAIR NAVIGATION (HOME + DETAIL + MAP)
+        composable(Routes.CAREER_FAIR) {
+            NavGraph(navController = navController)
+        }
+    }
+}
+
+@Composable
+fun NavGraph(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "careerFair"
+    ) {
+        // HOME SCREEN
+        composable("careerFair") {
+            CareerFairScreen(navController)
+        }
+
+        // DETAIL EVENT
+        composable(
+            route = "eventDetail/{eventTitle}",
+            arguments = listOf(navArgument("eventTitle") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedTitle = backStackEntry.arguments?.getString("eventTitle") ?: ""
+            val decodedTitle = Uri.decode(encodedTitle)
+            EventDetailScreen(navController, decodedTitle)
+        }
+
+        // EVENT MAP
+        composable("eventMap") { EventMapScreen(navController) }
+
+        // BOOTH DETAIL
+        composable(
+            route = "boothDetail/{boothId}",
+            arguments = listOf(navArgument("boothId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val boothId = backStackEntry.arguments?.getString("boothId")?.toIntOrNull() ?: 0
+            BoothDetailScreen(navController, boothId)
+        }
+
+        // OTHER SCREENS
+        composable("checkIn") { CheckInScreen(navController) }
+        composable("networking") { NetworkingScreen(navController) }
+        composable("notification") { NotificationScreen(navController) }
     }
 }
