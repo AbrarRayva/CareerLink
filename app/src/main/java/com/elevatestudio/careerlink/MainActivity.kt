@@ -19,7 +19,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Panggil navigasi utama di sini
                     AppNavigation()
                 }
             }
