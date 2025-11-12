@@ -33,12 +33,18 @@ object Routes {
     const val SIGN_IN = "signin"
     const val SIGN_UP = "signup"
     const val FORGOT_PASSWORD = "forgot_password"
-    // const val HOME = "home"
     const val CAREER_FAIR = "career_fair"
+    const val EVENT_DETAIL = "eventDetail/{eventTitle}"
+    const val EVENT_MAP = "eventMap"
+    const val BOOTH_DETAIL = "boothDetail/{boothId}"
+    const val CHECK_IN = "checkIn"
+    const val NETWORKING = "networking"
+    const val NOTIFICATION = "notification"
+
 
     // --- RUTE BARU UNTUK MODUL LOWONGAN ---
     const val DAFTAR_LOWONGAN = "daftar_lowongan"
-    const val NOTIFIKASI = "notifikasi"
+    const val NOTIFIKASI = "notifikasi_lowongan" // Ganti nama agar tidak konflik
     // Ini butuh argumen (ID lowongan)
     const val DETAIL_LOWONGAN = "detail_lowongan/{lowonganId}"
     // Ini juga butuh argumen (ID lowongan)
@@ -58,7 +64,7 @@ fun AppNavigation() {
     // NavHost ini yang nampung semua layar
     NavHost(
         navController = navController,
-        startDestination = Routes.SPLASH // Mulai dari Splash Screen
+        startDestination = Routes.CAREER_FAIR // Mulai dari Career Fair
     ) {
 
         // --- GRUP OTENTIKASI ---
@@ -95,7 +101,7 @@ fun AppNavigation() {
                 onSignInClicked = { email, password ->
                     // Nanti di sini logikanya
                     // UNTUK SEKARANG, kita anggap login sukses & lempar ke daftar lowongan
-                    navController.navigate(Routes.DAFTAR_LOWONGAN) {
+                    navController.navigate(Routes.CAREER_FAIR) {
                         popUpTo(Routes.SIGN_IN) { inclusive = true } // Hapus layar login
                     }
                 }
@@ -129,27 +135,14 @@ fun AppNavigation() {
             )
         }
 
-        // CAREER FAIR NAVIGATION (HOME + DETAIL + MAP)
+        // --- GRUP CAREER FAIR ---
         composable(Routes.CAREER_FAIR) {
-            NavGraph(navController = navController)
-        }
-    }
-}
-
-@Composable
-fun NavGraph(navController: NavHostController) {
-    NavHost(
-        navController = navController,
-        startDestination = "careerFair"
-    ) {
-        // HOME SCREEN
-        composable("careerFair") {
             CareerFairScreen(navController)
         }
 
         // DETAIL EVENT
         composable(
-            route = "eventDetail/{eventTitle}",
+            route = Routes.EVENT_DETAIL,
             arguments = listOf(navArgument("eventTitle") { type = NavType.StringType })
         ) { backStackEntry ->
             val encodedTitle = backStackEntry.arguments?.getString("eventTitle") ?: ""
@@ -158,11 +151,11 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // EVENT MAP
-        composable("eventMap") { EventMapScreen(navController) }
+        composable(Routes.EVENT_MAP) { EventMapScreen(navController) }
 
         // BOOTH DETAIL
         composable(
-            route = "boothDetail/{boothId}",
+            route = Routes.BOOTH_DETAIL,
             arguments = listOf(navArgument("boothId") { type = NavType.StringType })
         ) { backStackEntry ->
             val boothId = backStackEntry.arguments?.getString("boothId")?.toIntOrNull() ?: 0
@@ -170,10 +163,12 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // OTHER SCREENS
-        composable("checkIn") { CheckInScreen(navController) }
-        composable("networking") { NetworkingScreen(navController) }
-        composable("notification") { NotificationScreen(navController) }
-        // --- GRUP MODUL LOWONGAN (INI YANG BARU) ---
+        composable(Routes.CHECK_IN) { CheckInScreen(navController) }
+        composable(Routes.NETWORKING) { NetworkingScreen(navController) }
+        composable(Routes.NOTIFICATION) { NotificationScreen(navController) }
+
+
+        // --- GRUP MODUL LOWONGAN ---
 
         composable(Routes.DAFTAR_LOWONGAN) {
             DaftarLowonganScreen(
@@ -183,11 +178,10 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigate = { route ->
                     // TODO: Handle navigasi navbar
-                    // Contoh: if (route == "home") navController.navigate(Routes.HOME)
                     if (route == "lowongan") {
-                        // Udah di sini, gak usah ngapa-ngapain
-                    } else {
-                        // Nanti navigasi ke modul lain
+                        // Udah di sini, gak usah ngapain-ngapain
+                    } else if(route == "home") {
+                         navController.navigate(Routes.CAREER_FAIR)
                     }
                 }
             )
