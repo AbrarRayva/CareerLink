@@ -15,18 +15,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
+import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
 @Composable
 fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = PrimaryGreen,
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = SecondaryGreen.copy(alpha = 0.5f),
+            disabledContentColor = Color.White.copy(alpha = 0.7f)
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = modifier

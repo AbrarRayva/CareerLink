@@ -10,7 +10,6 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -100,7 +99,7 @@ fun OnboardingScreen(
         if (pagerState.currentPage == onboardingPages.size - 1) {
             // Ini Halaman Terakhir (halaman ke-2, index-nya)
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
-                PrimaryButton(text = "Sign In", onClick = onNavigateToSignIn)
+                PrimaryButton(text = "Sign In", onClick = onNavigateToSignIn,)
                 Spacer(modifier = Modifier.height(12.dp))
                 SecondaryButton(text = "Sign Up", onClick = onNavigateToSignUp)
             }
@@ -117,7 +116,7 @@ fun OnboardingScreen(
                         scope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
-                    }
+                    },
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 SecondaryButton(

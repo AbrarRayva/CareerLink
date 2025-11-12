@@ -83,7 +83,7 @@ fun ForgotPasswordScreen(
         // 5. Tombol Kirim
         PrimaryButton(
             text = "Simpan Kata Sandi",
-            onClick = { onSavePasswordClicked(email.value, newPassword.value, confirmPassword.value) }
+            onClick = { onSavePasswordClicked(email.value, newPassword.value, confirmPassword.value) },
         )
     }
 }
