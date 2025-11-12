@@ -23,10 +23,10 @@ data class BottomNavItem(
 // Daftar Item Navigasi
 val navItems = listOf(
     BottomNavItem("mentoring_notes", "Catatan", Icons.AutoMirrored.Filled.List),
-    //BottomNavItem("mentoring_schedule", "Jadwal", Icons.Filled.CalendarMonth),
+    BottomNavItem("mentoring_schedule", "Jadwal", Icons.Filled.CalendarMonth),
     BottomNavItem("home", "Home", Icons.Filled.Home),
-    //BottomNavItem("learning_module", "Modul", Icons.Filled.Book),
-    //BottomNavItem("career_jobs", "Karir", Icons.Filled.Work)
+    BottomNavItem("learning_module", "Modul", Icons.Filled.Book),
+    BottomNavItem("career_jobs", "Karir", Icons.Filled.Work)
 )
 
 @Composable

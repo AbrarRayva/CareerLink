@@ -1,11 +1,11 @@
 package com.elevatestudio.careerlink.ui.mentoring
 
-
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -78,10 +78,10 @@ fun CatatanMentoringScreen(navController: NavController) {
                         .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.Start
                 ) {
-//                    Icon(Icons.Filled.List, contentDescription = "Daftar", modifier = Modifier.size(24.dp).padding(end = 16.dp))
-//                    Icon(Icons.Filled.Attachment, contentDescription = "Lampiran", modifier = Modifier.size(24.dp).padding(end = 16.dp))
-//                    Icon(Icons.Filled.Edit, contentDescription = "Gambar", modifier = Modifier.size(24.dp).padding(end = 16.dp))
-//                    Icon(Icons.Filled.Image, contentDescription = "Gambar", modifier = Modifier.size(24.dp))
+                    Icon(Icons.Filled.List, contentDescription = "Daftar", modifier = Modifier.size(24.dp).padding(end = 16.dp))
+                    Icon(Icons.Filled.Attachment, contentDescription = "Lampiran", modifier = Modifier.size(24.dp).padding(end = 16.dp))
+                    Icon(Icons.Filled.Edit, contentDescription = "Gambar", modifier = Modifier.size(24.dp).padding(end = 16.dp))
+                    Icon(Icons.Filled.Image, contentDescription = "Gambar", modifier = Modifier.size(24.dp))
                 }
             }
         }
