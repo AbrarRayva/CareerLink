@@ -119,7 +119,7 @@ fun SignUpScreen(
                             onSignUpClicked(email.value, password.value, confirmPassword.value)
                         }
                     }
-                }
+                },
             )
 
             // Tampilkan pesan teks kecil di bawah tombol

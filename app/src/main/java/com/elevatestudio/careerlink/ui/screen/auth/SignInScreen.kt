@@ -116,7 +116,7 @@ fun SignInScreen(
                             onSignInClicked(email.value, password.value)
                         }
                     }
-                }
+                },
             )
 
             // Tampilkan pesan teks kecil di bawah tombol
