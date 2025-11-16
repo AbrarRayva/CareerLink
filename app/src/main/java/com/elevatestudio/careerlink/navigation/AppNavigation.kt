@@ -28,6 +28,11 @@ import com.elevatestudio.careerlink.ui.screen.lowongan.AjukanLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.NotifikasiScreen
+// --- IMPORT MODUL MENTORING ---
+import com.elevatestudio.careerlink.ui.screen.mentoring.BookingMentoringScreen
+import com.elevatestudio.careerlink.ui.screen.mentoring.CatatanMentoringScreen
+import com.elevatestudio.careerlink.ui.screen.mentoring.DetailMentoringScreen
+import com.elevatestudio.careerlink.ui.screen.mentoring.JadwalMentoringScreen
 // --- IMPORT MODUL KURSUS (DARI KITA) ---
 import com.elevatestudio.careerlink.ui.screen.kursus.BadgeScanScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
@@ -69,6 +74,12 @@ object Routes {
     const val BADGE_SCAN = "badge_scan"
     const val DETAIL_KURSUS = "detail_kursus/{kursusId}"
     fun detailKursus(kursusId: String) = "detail_kursus/$kursusId"
+
+    // --- GRUP MENTORING ---
+    const val JADWAL_MENTORING = "jadwal_mentoring"
+    const val DETAIL_MENTORING = "detail_mentoring/{sessionId}"
+    const val BOOKING_MENTORING = "booking_mentoring/{sessionId}"
+    const val CATATAN_MENTORING = "catatan_mentoring/{sessionId}"
 }
 
 @OptIn(ExperimentalAnimationApi::class) // <-- Aktifkan Animasi
@@ -322,6 +333,42 @@ fun AppNavigation() {
             BadgeScanScreen(
                 onBackClick = { navController.popBackStack() }
             )
+        }
+    }
+
+    @Composable
+    fun CareerLinkNavGraph() {
+        val navController = rememberNavController()
+
+        NavHost(
+            navController = navController,
+            startDestination = Routes.JADWAL_MENTORING
+        ) {
+            // 🔹 1. Daftar Jadwal
+            composable(Routes.JADWAL_MENTORING) {
+                JadwalMentoringScreen(navController)
+            }
+
+            // 🔹 2. Detail Mentoring
+            composable(
+                route = Routes.DETAIL_MENTORING,
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId")
+                DetailMentoringScreen(navController, sessionId)
+            }
+
+            // 🔹 3. Booking Mentoring
+            composable(
+                route = Routes.BOOKING_MENTORING,
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            ) {
+                BookingMentoringScreen(navController)}
+
+            // 🔹 4. Catatan Mentoring
+            composable(Routes.CATATAN_MENTORING) {
+                CatatanMentoringScreen(navController)
+            }
         }
     }
 }
