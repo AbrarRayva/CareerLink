@@ -3,12 +3,14 @@ package com.elevatestudio.careerlink.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation // Penting untuk nested navigation
 import com.elevatestudio.careerlink.ui.screen.OnboardingScreen
 import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
@@ -26,39 +28,34 @@ import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.NotifikasiScreen
 
-// Definisikan rute-rute layarnya biar gak salah ketik
 object Routes {
     const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
     const val SIGN_IN = "signin"
     const val SIGN_UP = "signup"
     const val FORGOT_PASSWORD = "forgot_password"
-    // const val HOME = "home"
+
+    // Nama rute untuk GRUP Career Fair
     const val CAREER_FAIR = "career_fair"
 
-    // --- RUTE BARU UNTUK MODUL LOWONGAN ---
+    // --- RUTE MODUL LOWONGAN ---
     const val DAFTAR_LOWONGAN = "daftar_lowongan"
     const val NOTIFIKASI = "notifikasi"
-    // Ini butuh argumen (ID lowongan)
     const val DETAIL_LOWONGAN = "detail_lowongan/{lowonganId}"
-    // Ini juga butuh argumen (ID lowongan)
     const val AJUKAN_LOWONGAN = "ajukan_lowongan/{lowonganId}"
 
-    // Helper function biar gampang pindah ke detail/ajuan
     fun detailLowongan(lowonganId: String) = "detail_lowongan/$lowonganId"
     fun ajukanLowongan(lowonganId: String) = "ajukan_lowongan/$lowonganId"
-
 }
 
 @Composable
 fun AppNavigation() {
-    // Controller buat ngatur navigasi
     val navController = rememberNavController()
 
-    // NavHost ini yang nampung semua layar
     NavHost(
         navController = navController,
-        startDestination = Routes.SPLASH // Mulai dari Splash Screen
+        // Catatan: Jika ingin mulai dari Splash, ganti ini ke Routes.SPLASH
+        startDestination = Routes.CAREER_FAIR
     ) {
 
         // --- GRUP OTENTIKASI ---
@@ -93,10 +90,8 @@ fun AppNavigation() {
                 onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) },
                 onNavigateToForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) },
                 onSignInClicked = { email, password ->
-                    // Nanti di sini logikanya
-                    // UNTUK SEKARANG, kita anggap login sukses & lempar ke daftar lowongan
                     navController.navigate(Routes.DAFTAR_LOWONGAN) {
-                        popUpTo(Routes.SIGN_IN) { inclusive = true } // Hapus layar login
+                        popUpTo(Routes.SIGN_IN) { inclusive = true }
                     }
                 }
             )
@@ -110,8 +105,6 @@ fun AppNavigation() {
                     }
                 },
                 onSignUpClicked = { email, password, confirmPassword ->
-                    // Nanti di sini logikanya
-                    // Kalo sukses, balik ke Sign In
                     navController.popBackStack()
                 }
             )
@@ -120,8 +113,6 @@ fun AppNavigation() {
         composable(Routes.FORGOT_PASSWORD) {
             ForgotPasswordScreen(
                 onSavePasswordClicked = { email, newPass, confirmPass ->
-                    // Nanti di sini logikanya
-                    // Kalo sukses, balik ke Sign In
                     navController.navigate(Routes.SIGN_IN) {
                         popUpTo(Routes.SIGN_IN) { inclusive = true }
                     }
@@ -129,21 +120,25 @@ fun AppNavigation() {
             )
         }
 
-        // CAREER FAIR NAVIGATION
-        composable(Routes.CAREER_FAIR) {
-            NavGraph(navController = navController)
-        }
+        // --- CAREER FAIR & LOWONGAN NAVIGATION ---
+        // Panggil extension function NavGraph di sini langsung
+        // (Jangan dibungkus composable lagi)
+        NavGraph(navController = navController)
     }
 }
 
-@Composable
-fun NavGraph(navController: NavHostController) {
-    NavHost(
-        navController = navController,
-        startDestination = "careerFair"
+// Ubah fungsi ini menjadi extension dari NavGraphBuilder
+// Hapus @Composable dan hapus NavHost di dalamnya
+fun NavGraphBuilder.NavGraph(navController: NavHostController) {
+
+    // Gunakan navigation() untuk membuat nested graph
+    navigation(
+        route = Routes.CAREER_FAIR, // Nama grup ("career_fair")
+        startDestination = "careerFairHome" // Rute awal di dalam grup ini
     ) {
-        // HOME SCREEN
-        composable("careerFair") {
+
+        // HOME SCREEN (Ubah nama rutenya jadi unik, misal "careerFairHome")
+        composable("careerFairHome") {
             CareerFairScreen(navController)
         }
 
@@ -157,7 +152,7 @@ fun NavGraph(navController: NavHostController) {
             EventDetailScreen(navController, decodedTitle)
         }
 
-        // EVENT MAP — RUTE ANDA (TANPA PARAM)
+        // EVENT MAP (TANPA PARAM)
         composable("eventMap") {
             EventMapScreen(
                 navController = navController,
@@ -166,7 +161,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // EVENT MAP — RUTE BARU (DENGAN PARAM)
+        // EVENT MAP (DENGAN PARAM)
         composable(
             route = "eventMap?mode={mode}&eventId={eventId}",
             arguments = listOf(
@@ -180,7 +175,6 @@ fun NavGraph(navController: NavHostController) {
                 }
             )
         ) { backStackEntry ->
-
             val mode = backStackEntry.arguments?.getString("mode")
             val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
 
@@ -205,21 +199,16 @@ fun NavGraph(navController: NavHostController) {
         composable("networking") { NetworkingScreen(navController) }
         composable("notification") { NotificationScreen(navController) }
 
-        // --- GRUP MODUL LOWONGAN (INI YANG BARU) ---
+        // --- GRUP MODUL LOWONGAN ---
 
         composable(Routes.DAFTAR_LOWONGAN) {
             DaftarLowonganScreen(
                 onLowonganClick = { lowonganId ->
-                    // Pindah ke Detail bawa ID
                     navController.navigate(Routes.detailLowongan(lowonganId))
                 },
                 onNavigate = { route ->
-                    // TODO: Handle navigasi navbar
-                    // Contoh: if (route == "home") navController.navigate(Routes.HOME)
                     if (route == "lowongan") {
-                        // Udah di sini, gak usah ngapa-ngapain
-                    } else {
-                        // Nanti navigasi ke modul lain
+                        // Do nothing
                     }
                 }
             )
@@ -229,15 +218,13 @@ fun NavGraph(navController: NavHostController) {
             route = Routes.DETAIL_LOWONGAN,
             arguments = listOf(navArgument("lowonganId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // Ambil ID dari argumen
             val lowonganId = backStackEntry.arguments?.getString("lowonganId") ?: ""
             DetailLowonganScreen(
                 lowonganId = lowonganId,
                 onDaftarClick = { id ->
-                    // Pindah ke Ajukan Lowongan bawa ID
                     navController.navigate(Routes.ajukanLowongan(id))
                 },
-                onBackClick = { navController.popBackStack() } // Tombol back
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -248,11 +235,9 @@ fun NavGraph(navController: NavHostController) {
             val lowonganId = backStackEntry.arguments?.getString("lowonganId") ?: ""
             AjukanLowonganScreen(
                 lowonganId = lowonganId,
-                onBackClick = { navController.popBackStack() }, // Tombol back
+                onBackClick = { navController.popBackStack() },
                 onGoToHome = {
-                    // Kalo sukses submit, balik ke layar daftar lowongan
                     navController.navigate(Routes.DAFTAR_LOWONGAN) {
-                        // Hapus semua layar di atasnya (detail, ajukan)
                         popUpTo(Routes.DAFTAR_LOWONGAN) { inclusive = true }
                     }
                 }
@@ -262,10 +247,7 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.NOTIFIKASI) {
             NotifikasiScreen(
                 onBackClick = { navController.popBackStack() },
-                onLihatClick = { notifId ->
-                    // TODO: Tentukan mau ke mana kalo notif di-klik
-                    // Cth: navController.navigate(Routes.detailLowongan(notifId))
-                }
+                onLihatClick = { }
             )
         }
     }

@@ -73,11 +73,20 @@ fun EventMapScreen(
 }
 
 @Composable
-fun BoothCustomMapView(navController: NavController, eventId: Int) {
-    TODO("Not yet implemented")
+fun BoothCustomMapView(
+    navController: NavController, // Add this parameter
+    eventId: Int                  // Add this parameter
+) {
+    // Placeholder UI to prevent crashing
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Booth Map View - Under Construction (Event ID: $eventId)")
+    }
 }
 
 @Composable
 fun EventGoogleMapView() {
-    TODO("Not yet implemented")
+    // TODO: Implement this later
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Event Google Map View")
+    }
 }
