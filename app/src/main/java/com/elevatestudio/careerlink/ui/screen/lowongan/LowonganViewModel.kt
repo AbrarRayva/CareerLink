@@ -1,14 +1,22 @@
 // Lokasi: ui/screen/lowongan/LowonganViewModel.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.elevatestudio.careerlink.data.remote.RetrofitClient
+import com.elevatestudio.careerlink.utils.FileUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed interface SubmissionState {
     object Idle : SubmissionState
@@ -41,12 +49,9 @@ data class AjukanLamaranState(
                 nomorAktif.isNotBlank() &&
                 wordCount >= 80 &&
                 cvUri != null &&
-                suratRekomendasiUri != null
+                suratRekomendasiUri != null // <-- Validasi Surat Rekomendasi Wajib
 }
 
-/**
- * Ini adalah "perintah" yang dikirim dari UI (Screen) ke ViewModel.
- */
 sealed interface LamaranFormEvent {
     data class NamaChanged(val value: String) : LamaranFormEvent
     data class TanggalLahirChanged(val value: String) : LamaranFormEvent
@@ -59,15 +64,12 @@ sealed interface LamaranFormEvent {
     data class PortofolioUploaded(val uri: String?) : LamaranFormEvent
     data class SuratRekomendasiUploaded(val uri: String?) : LamaranFormEvent
 
-    // --- TAMBAHAN BARU UNTUK HAPUS FILE ---
     object ClearCv : LamaranFormEvent
     object ClearPortofolio : LamaranFormEvent
     object ClearSuratRekomendasi : LamaranFormEvent
-    // --- SELESAI TAMBAHAN ---
 
     object Submit : LamaranFormEvent
 }
-
 
 class LowonganViewModel : ViewModel() {
 
@@ -79,7 +81,6 @@ class LowonganViewModel : ViewModel() {
 
     fun onLamaranEvent(event: LamaranFormEvent) {
         when (event) {
-            // Update state sesuai 'event' yang masuk
             is LamaranFormEvent.NamaChanged -> _lamaranState.update { it.copy(namaLengkap = event.value) }
             is LamaranFormEvent.TanggalLahirChanged -> _lamaranState.update { it.copy(tanggalLahir = event.value) }
             is LamaranFormEvent.JenisKelaminChanged -> _lamaranState.update { it.copy(jenisKelamin = event.value) }
@@ -91,33 +92,92 @@ class LowonganViewModel : ViewModel() {
             is LamaranFormEvent.PortofolioUploaded -> _lamaranState.update { it.copy(portofolioUri = event.uri) }
             is LamaranFormEvent.SuratRekomendasiUploaded -> _lamaranState.update { it.copy(suratRekomendasiUri = event.uri) }
 
-            // --- TAMBAHAN BARU UNTUK HAPUS FILE ---
             LamaranFormEvent.ClearCv -> _lamaranState.update { it.copy(cvUri = null) }
             LamaranFormEvent.ClearPortofolio -> _lamaranState.update { it.copy(portofolioUri = null) }
             LamaranFormEvent.ClearSuratRekomendasi -> _lamaranState.update { it.copy(suratRekomendasiUri = null) }
-            // --- SELESAI TAMBAHAN ---
 
-            LamaranFormEvent.Submit -> {
-                submitLamaran()
-            }
+            LamaranFormEvent.Submit -> { /* No-op, dipanggil langsung dari UI */ }
         }
     }
 
-    private fun submitLamaran() {
-        if (!_lamaranState.value.isFormValid) return
+    fun submitLamaran(context: Context, lowonganId: String) {
+        val currentState = _lamaranState.value
+        if (!currentState.isFormValid) return
 
         viewModelScope.launch {
             _submissionState.value = SubmissionState.Loading
             try {
-                delay(2000)
-                val isSuccess = true
-                if (isSuccess) {
-                    _submissionState.value = SubmissionState.Success
+                // 1. SIAPKAN FILE CV (Wajib)
+                val cvUri = Uri.parse(currentState.cvUri)
+                val cvFile = FileUtils.getFileFromUri(context, cvUri)
+
+                // 2. SIAPKAN SURAT REKOMENDASI (Wajib)
+                val recUri = Uri.parse(currentState.suratRekomendasiUri!!) // Aman di-force unwrap karena isFormValid
+                val recFile = FileUtils.getFileFromUri(context, recUri)
+
+                if (cvFile != null && recFile != null) {
+
+                    // -- Proses CV --
+                    val cvRequest = cvFile.asRequestBody("application/pdf".toMediaTypeOrNull())
+                    val cvPart = MultipartBody.Part.createFormData("cv", cvFile.name, cvRequest)
+
+                    // -- Proses Surat Rekomendasi --
+                    val recRequest = recFile.asRequestBody("application/pdf".toMediaTypeOrNull())
+                    val recPart = MultipartBody.Part.createFormData("recommendation_letter", recFile.name, recRequest)
+
+                    // -- Proses Portofolio (Opsional) --
+                    var portfolioPart: MultipartBody.Part? = null
+                    if (currentState.portofolioUri != null) {
+                        val portUri = Uri.parse(currentState.portofolioUri)
+                        val portFile = FileUtils.getFileFromUri(context, portUri)
+                        if (portFile != null) {
+                            val portRequest = portFile.asRequestBody("application/pdf".toMediaTypeOrNull())
+                            portfolioPart = MultipartBody.Part.createFormData("portfolio", portFile.name, portRequest)
+                        }
+                    }
+
+                    // 3. SIAPKAN DATA TEKS
+                    fun createPart(value: String): RequestBody {
+                        return value.toRequestBody("text/plain".toMediaTypeOrNull())
+                    }
+
+                    val fullNamePart = createPart(currentState.namaLengkap)
+                    val dobPart = createPart(currentState.tanggalLahir)
+                    val genderPart = createPart(currentState.jenisKelamin)
+                    val educationPart = createPart(currentState.pendidikan)
+                    val majorPart = createPart(currentState.programStudi)
+                    val phonePart = createPart(currentState.nomorAktif)
+                    val aboutPart = createPart(currentState.ceritakanDirimu)
+
+                    // 4. TOKEN (Hardcoded sementara)
+                    val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3NjQ5MzI0OTAsImV4cCI6MTc2NTUzNzI5MH0.0hJfzE1uaKkY3Fdz6Uo_tjBMZO-f2HQQftXJB6gBWSI"
+
+                    // 5. TEMBAK API
+                    val response = RetrofitClient.instance.ajukanLowongan(
+                        token = token,
+                        lowonganId = lowonganId,
+                        cv = cvPart,
+                        recommendation_letter = recPart, // Masuk sebagai parameter wajib
+                        portfolio = portfolioPart,       // Masuk sebagai parameter opsional (Multipart)
+                        fullName = fullNamePart,
+                        dob = dobPart,
+                        gender = genderPart,
+                        education = educationPart,
+                        major = majorPart,
+                        phone = phonePart,
+                        aboutMe = aboutPart
+                    )
+
+                    if (response.isSuccessful) {
+                        _submissionState.value = SubmissionState.Success
+                    } else {
+                        _submissionState.value = SubmissionState.Error("Gagal: ${response.message()}")
+                    }
                 } else {
-                    throw Exception("Terjadi kesalahan, silahkan coba lagi")
+                    _submissionState.value = SubmissionState.Error("Gagal membaca file dokumen")
                 }
             } catch (e: Exception) {
-                _submissionState.value = SubmissionState.Error(e.message ?: "Unknown error")
+                _submissionState.value = SubmissionState.Error("Error: ${e.message}")
             }
         }
     }

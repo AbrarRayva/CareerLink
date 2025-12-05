@@ -98,7 +98,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.DAFTAR_KURSUS, // <-- Dikembalikan ke SPLASH
+        startDestination = Routes.DAFTAR_LOWONGAN, // <-- Dikembalikan ke SPLASH
         // Terapkan animasi default ke SEMUA layar
         enterTransition = { slideIn },
         exitTransition = { slideOut },

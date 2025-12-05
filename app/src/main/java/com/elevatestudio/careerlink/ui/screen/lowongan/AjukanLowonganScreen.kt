@@ -280,7 +280,7 @@ fun AjukanLowonganScreen(
                 onDismiss = { showKirimDialog = false },
                 onConfirm = {
                     showKirimDialog = false
-                    viewModel.onLamaranEvent(LamaranFormEvent.Submit)
+                    viewModel.submitLamaran(context, lowonganId)
                 },
                 title = "Apakah pengisian data sudah benar dan lamaran siap kirim?",
                 icon = {

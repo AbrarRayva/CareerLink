@@ -6,7 +6,6 @@ import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
 
 // --- IMPORT UNTUK MODUL LOWONGAN ---
-import com.elevatestudio.careerlink.data.model.AjukanLowonganRequest
 import com.elevatestudio.careerlink.data.model.GeneralResponse
 import com.elevatestudio.careerlink.data.model.LowonganDetail
 import com.elevatestudio.careerlink.data.model.LowonganItem
@@ -25,9 +24,11 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import okhttp3.RequestBody
 
 
 interface ApiService {
@@ -41,10 +42,9 @@ interface ApiService {
 
 
     // --- Modul Lowongan ---
-    @GET("/lowongan")
+    @GET("jobs")
     suspend fun getLowongan(
-        @Query("search") query: String? = null,
-        @Query("tipe") tipe: String? = null
+        @Query("search") query: String? = null
     ): Response<List<LowonganItem>>
 
     @GET("/lowongan/{id}")
@@ -52,10 +52,30 @@ interface ApiService {
         @Path("id") lowonganId: String
     ): Response<LowonganDetail>
 
-    @POST("/lowongan/{id}/ajukan")
+    @Multipart
+    @POST("jobs/{id}/apply")
     suspend fun ajukanLowongan(
+        @Header("Authorization") token: String,
         @Path("id") lowonganId: String,
-        @Body body: AjukanLowonganRequest
+
+        // 1. CV (Wajib)
+        @Part cv: MultipartBody.Part,
+
+        // 2. Surat Rekomendasi (WAJIB - Tidak boleh null/tanda tanya)
+        @Part recommendation_letter: MultipartBody.Part,
+
+        // 3. Portofolio (Opsional - Boleh null)
+        // Perhatikan namanya 'portfolio' sesuai backend, bukan 'portfolio_url' lagi
+        @Part portfolio: MultipartBody.Part?,
+
+        // 4. Data Diri (Teks)
+        @Part("full_name") fullName: RequestBody,
+        @Part("date_of_birth") dob: RequestBody,
+        @Part("gender") gender: RequestBody,
+        @Part("education") education: RequestBody,
+        @Part("major") major: RequestBody,
+        @Part("phone_number") phone: RequestBody,
+        @Part("about_me") aboutMe: RequestBody
     ): Response<GeneralResponse>
 
     @GET("/notifikasi")
