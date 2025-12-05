@@ -98,7 +98,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.KURSUS_DASHBOARD, // <-- Dikembalikan ke SPLASH
+        startDestination = Routes.DAFTAR_KURSUS, // <-- Dikembalikan ke SPLASH
         // Terapkan animasi default ke SEMUA layar
         enterTransition = { slideIn },
         exitTransition = { slideOut },
@@ -142,7 +142,7 @@ fun AppNavigation() {
                 onNavigateToForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) },
                 onSignInClicked = { email, password ->
                     // Login sukses, lempar ke "HOME" (Career Fair)
-                    navController.navigate(Routes.CAREER_FAIR) {
+                    navController.navigate(Routes.JADWAL_MENTORING) {
                         popUpTo(Routes.SIGN_IN) { inclusive = true }
                     }
                 }
@@ -334,41 +334,32 @@ fun AppNavigation() {
                 onBackClick = { navController.popBackStack() }
             )
         }
-    }
 
-    @Composable
-    fun CareerLinkNavGraph() {
-        val navController = rememberNavController()
+        // 🔹 1. Daftar Jadwal
+        composable(Routes.JADWAL_MENTORING) {
+            JadwalMentoringScreen(navController)
+        }
 
-        NavHost(
-            navController = navController,
-            startDestination = Routes.JADWAL_MENTORING
+        // 🔹 2. Detail Mentoring
+        composable(
+            route = Routes.DETAIL_MENTORING,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
+            DetailMentoringScreen(navController, sessionId)
+        }
+
+        // 🔹 3. Booking Mentoring
+        composable(
+            route = Routes.BOOKING_MENTORING,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
         ) {
-            // 🔹 1. Daftar Jadwal
-            composable(Routes.JADWAL_MENTORING) {
-                JadwalMentoringScreen(navController)
-            }
+            BookingMentoringScreen(navController)}
 
-            // 🔹 2. Detail Mentoring
-            composable(
-                route = Routes.DETAIL_MENTORING,
-                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val sessionId = backStackEntry.arguments?.getString("sessionId")
-                DetailMentoringScreen(navController, sessionId)
-            }
-
-            // 🔹 3. Booking Mentoring
-            composable(
-                route = Routes.BOOKING_MENTORING,
-                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
-            ) {
-                BookingMentoringScreen(navController)}
-
-            // 🔹 4. Catatan Mentoring
-            composable(Routes.CATATAN_MENTORING) {
-                CatatanMentoringScreen(navController)
+        // 🔹 4. Catatan Mentoring
+        composable(Routes.CATATAN_MENTORING) {
+            CatatanMentoringScreen(navController)
             }
         }
     }
-}
+
