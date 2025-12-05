@@ -52,13 +52,14 @@ fun CareerFairScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            // FAB animasi berdenyut
+            // Animasi FAB
             var expanded by remember { mutableStateOf(true) }
             val scale by animateFloatAsState(
                 targetValue = if (expanded) 1.05f else 1f,
                 animationSpec = tween(800),
                 label = "fabScale"
             )
+
             LaunchedEffect(Unit) {
                 while (true) {
                     expanded = !expanded
@@ -67,35 +68,43 @@ fun CareerFairScreen(navController: NavController) {
             }
 
             ExtendedFloatingActionButton(
-                onClick = { navController.navigate("eventMap") },
+                onClick = {
+                    navController.navigate("eventMap")
+                },
                 containerColor = PrimaryGreen,
                 elevation = FloatingActionButtonDefaults.elevation(10.dp),
-                modifier = Modifier.scale(scale),
-                content = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Place, contentDescription = "Peta Event", tint = Color.White)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Lihat Peta", color = Color.White, fontWeight = FontWeight.SemiBold)
-                    }
+                modifier = Modifier.scale(scale)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Place, contentDescription = "Peta Event", tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Lihat Peta Event", color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
-            )
+            }
         }
     ) { padding ->
+
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             modifier = Modifier.padding(padding)
         ) {
             itemsIndexed(eventList) { index, event ->
+
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(tween(400 * (index + 1))) + slideInVertically(initialOffsetY = { it / 2 }),
+                    enter = fadeIn(tween(400 * (index + 1))) +
+                            slideInVertically(initialOffsetY = { it / 2 })
                 ) {
-                    EventCardItem(event = event, onClick = {
-                        val encodedTitle = Uri.encode(event.title)
-                        navController.navigate("eventDetail/$encodedTitle")  // ✅ sesuai dengan NavGraph
-                    })
+                    EventCardItem(
+                        event = event,
+                        onClick = {
+                            val encoded = Uri.encode(event.title)
+                            navController.navigate("eventDetail/$encoded")
+                        }
+                    )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+
+                Spacer(Modifier.height(12.dp))
             }
         }
     }
@@ -108,36 +117,49 @@ fun EventCardItem(event: Event, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Box(
             modifier = Modifier
                 .background(
-                    Brush.linearGradient(listOf(SecondaryGreen.copy(alpha = 0.35f), Color.White))
+                    Brush.linearGradient(
+                        listOf(
+                            SecondaryGreen.copy(alpha = 0.35f),
+                            Color.White
+                        )
+                    )
                 )
                 .padding(16.dp)
         ) {
+
             Column {
+
                 Text(
                     text = event.title,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen,
                     fontSize = MaterialTheme.typography.titleMedium.fontSize
                 )
+
                 Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
                     text = "${event.date} · ${event.location}",
                     color = Color.Gray,
                     style = MaterialTheme.typography.bodySmall
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
                     text = event.description,
                     color = Color.DarkGray,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 Spacer(modifier = Modifier.height(10.dp))
+
                 Button(
                     onClick = onClick,
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
