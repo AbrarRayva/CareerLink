@@ -1,5 +1,6 @@
 package com.elevatestudio.careerlink.ui.screen.careerfair
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +25,7 @@ data class NotificationItem(
     var isread: Boolean = false
 )
 
+@SuppressLint("MutableCollectionMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(navController: NavController) {
