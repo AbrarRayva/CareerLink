@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -173,8 +177,7 @@ fun LowonganCard(
     item: LowonganItem,
     onClick: () -> Unit
 ) {
-    // Gabungkan Base URL + Path dari database untuk gambar
-    // Misal DB: uploads/logo.png -> Coil butuh: http://ip:3000/uploads/logo.png
+    // Logika URL Gambar
     val fullLogoUrl = if (item.logoUrl != null && !item.logoUrl.startsWith("http")) {
         "$BASE_IMAGE_URL${item.logoUrl}"
     } else {
@@ -185,73 +188,93 @@ fun LowonganCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.Top
         ) {
-            // KIRI: Logo Perusahaan
+            // --- 1. LOGO (Kiri) ---
             AsyncImage(
                 model = fullLogoUrl,
                 contentDescription = "Logo ${item.companyName}",
-                fallback = ColorPainter(Color.LightGray), // Warna abu kalo gak ada logo
-                error = ColorPainter(Color.LightGray),
+                fallback = rememberVectorPainter(Icons.Default.Apartment),
+                error = rememberVectorPainter(Icons.Default.Apartment),
+                placeholder = rememberVectorPainter(Icons.Default.Apartment),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
+                    .size(64.dp) // Sedikit diperbesar biar gagah
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF5F5F5))
+                    .padding(8.dp)
             )
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // TENGAH: Info Lowongan
-            Column(modifier = Modifier.weight(1f)) {
+            // --- 2. KONTEN (Kanan - Mengisi sisa ruang) ---
+            Column(
+                modifier = Modifier.weight(1f) // Penting! Ambil sisa lebar yg ada
+            ) {
+                // A. JUDUL (Lebih Besar & Bisa 2 Baris)
                 Text(
-                    text = item.title, // Judul Posisi
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    text = item.title,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 18.sp, // Ukuran font manual biar pas
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = Color.Black,
-                    maxLines = 1
+                    maxLines = 2, // Izinkan turun ke baris kedua
+                    overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = item.companyName, // Nama Perusahaan
-                    fontSize = 14.sp,
-                    color = Color.DarkGray
-                )
+
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Info Tambahan (Lokasi & Tipe)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), tint = Color.Gray)
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(item.location, fontSize = 12.sp, color = Color.Gray)
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Icon(Icons.Default.Work, null, Modifier.size(12.dp), tint = Color.Gray)
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(item.jobType, fontSize = 12.sp, color = Color.Gray)
-                }
-            }
-
-            // KANAN: Gaji (Lebih penting daripada gambar acak)
-            // Atau kalau mau tetap gambar, backend harus siapin gambar cover.
-            // Tapi biasanya Gaji lebih menarik buat pelamar.
-            Column(horizontalAlignment = Alignment.End) {
+                // B. PERUSAHAAN
                 Text(
-                    text = "Gaji",
-                    fontSize = 10.sp,
+                    text = item.companyName,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // C. INFO LOKASI & TIPE (Satu Baris)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Lokasi
+                    Icon(Icons.Default.LocationOn, null, Modifier.size(14.dp), tint = Color.Gray)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.location,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false) // Biar gak maksa lebar
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Tipe Kerja
+                    Icon(Icons.Default.Work, null, Modifier.size(14.dp), tint = Color.Gray)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.jobType,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // D. GAJI (Paling Bawah - Warna Hijau)
                 Text(
                     text = item.salaryRange,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    color = PrimaryGreen
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray
                 )
             }
         }
