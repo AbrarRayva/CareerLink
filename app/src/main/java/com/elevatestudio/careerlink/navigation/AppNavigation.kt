@@ -129,7 +129,7 @@ fun AppNavigation() {
             )
         }
 
-        // CAREER FAIR NAVIGATION (HOME + DETAIL + MAP)
+        // CAREER FAIR NAVIGATION
         composable(Routes.CAREER_FAIR) {
             NavGraph(navController = navController)
         }
@@ -157,8 +157,39 @@ fun NavGraph(navController: NavHostController) {
             EventDetailScreen(navController, decodedTitle)
         }
 
-        // EVENT MAP
-        composable("eventMap") { EventMapScreen(navController) }
+        // EVENT MAP — RUTE ANDA (TANPA PARAM)
+        composable("eventMap") {
+            EventMapScreen(
+                navController = navController,
+                mode = "event",
+                eventId = null
+            )
+        }
+
+        // EVENT MAP — RUTE BARU (DENGAN PARAM)
+        composable(
+            route = "eventMap?mode={mode}&eventId={eventId}",
+            arguments = listOf(
+                navArgument("mode") {
+                    type = NavType.StringType
+                    defaultValue = "event"
+                },
+                navArgument("eventId") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+
+            val mode = backStackEntry.arguments?.getString("mode")
+            val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
+
+            EventMapScreen(
+                navController = navController,
+                mode = mode,
+                eventId = eventId
+            )
+        }
 
         // BOOTH DETAIL
         composable(
@@ -173,6 +204,7 @@ fun NavGraph(navController: NavHostController) {
         composable("checkIn") { CheckInScreen(navController) }
         composable("networking") { NetworkingScreen(navController) }
         composable("notification") { NotificationScreen(navController) }
+
         // --- GRUP MODUL LOWONGAN (INI YANG BARU) ---
 
         composable(Routes.DAFTAR_LOWONGAN) {
