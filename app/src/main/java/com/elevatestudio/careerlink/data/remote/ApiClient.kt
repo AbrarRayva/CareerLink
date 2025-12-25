@@ -6,10 +6,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
+    // Saat ini menggunakan URL ngrok
     private const val BASE_URL = "https://unsignalised-clotilde-inequilaterally.ngrok-free.dev"
-    // local di emulator Android -> 10.0.2.2
-    // eksternal -> ganti IP (ex: 192.168.x.x)
-
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }

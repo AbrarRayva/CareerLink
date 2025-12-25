@@ -2,7 +2,6 @@
 package com.elevatestudio.careerlink.ui.screen.kursus
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,9 +10,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -23,36 +25,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.BadgeItem
-import com.elevatestudio.careerlink.data.model.KursusItem
 import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 
 // Data dummy
-val dummyBadges = listOf(
-    BadgeItem("1", "", "Badge 1"),
-    BadgeItem("2", "", "Badge 2"),
-    BadgeItem("3", "", "Badge 3"),
-    BadgeItem("4", "", "Badge 4")
-)
-val dummyRekomendasi = listOf(
-    KursusItem("1", "UPT Unand", "Cara Membuat CV", "Offline", "https://picsum.photos/seed/a/200"),
-    KursusItem("2", "FTI Unand", "Pintar UI/UX", "Online", "https://picsum.photos/seed/b/200")
-)
+val dummyBadges = listOf<BadgeItem>()
+// Contoh jika ada data:
+// val dummyBadges = listOf(
+//    BadgeItem("1", "", "Badge 1"),
+//    BadgeItem("2", "", "Badge 2"),
+// )
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardKursusScreen(
     onNavigate: (String) -> Unit,
     onNavigateToDaftarKursus: () -> Unit,
-    onNavigateToDetailKursus: (String) -> Unit,
-    onNavigateToBadgeScan: () -> Unit
+    onNavigateToDetailKursus: (String) -> Unit, // Keep for future use
+    onNavigateToBadgeScan: () -> Unit,
+    onNavigateToMyCourses: () -> Unit
 ) {
     val username = "User" // Data dummy
-
-    var isVisible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        isVisible = true
-    }
+    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         containerColor = AppBackground,
@@ -66,157 +60,140 @@ fun DashboardKursusScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp)
         ) {
-            // 1. Search Bar
+            // 1. Halo, Username
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    readOnly = true,
-                    placeholder = { Text("Search") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToDaftarKursus() }
-                )
-            }
-
-            // 2. Halo, Username
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "Halo, $username",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Selamat pagi!",
+                    text = "Selamat datang kembali!",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.Gray
                 )
             }
 
-            // 3. Course dan Badge Saya (Dengan Animasi)
+            // 2. Card "Course & Badge Saya"
             item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(500, delayMillis = 200)) + slideInVertically { it / 2 }
+                Spacer(modifier = Modifier.height(24.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToMyCourses() },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F0FE)), // Warna biru muda
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Course dan Badge Saya →",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onNavigateToBadgeScan() }
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                            contentDescription = "My Courses Icon",
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            items(dummyBadges) { badge ->
-                                AsyncImage(
-                                    model = badge.imageUrl,
-                                    contentDescription = badge.title,
-                                    placeholder = ColorPainter(Color.LightGray),
-                                    fallback = ColorPainter(Color.Gray),
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(72.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Course & Badge Saya",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Lihat semua progress belajarmu di sini.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Navigate to My Courses"
+                        )
+                    }
+                }
+            }
+
+            // 3. Preview Badge
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Badge Terbaru",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (dummyBadges.isEmpty()) {
+                    Text(
+                        text = "Anda belum mendapatkan badge. Selesaikan course untuk mendapatkannya!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                    )
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(dummyBadges) { badge ->
+                            AsyncImage(
+                                model = badge.imageUrl,
+                                contentDescription = badge.title,
+                                placeholder = ColorPainter(Color.LightGray),
+                                fallback = ColorPainter(Color.Gray),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                            )
                         }
                     }
                 }
             }
 
-            // 4. Statistik course (Dengan Animasi)
+            // 4. Cari Course
             item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(500, delayMillis = 400)) + slideInVertically { it / 2 }
-                ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Statistik course →",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { /* TODO: Navigasi ke statistik */ }
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        AsyncImage(
-                            model = "", // URL gambar statistik dari ViewModel
-                            contentDescription = "Statistik",
-                            placeholder = ColorPainter(Color.LightGray),
-                            fallback = ColorPainter(Color.Gray),
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Cari Course",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Ketik nama course...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        disabledContainerColor = Color.White,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Atau lihat semua daftar course yang tersedia.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable { onNavigateToDaftarKursus() }
+                        .padding(start = 4.dp)
+                )
+
             }
 
-            // 5. Course rekomendasi (Dengan Animasi)
-            item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(500, delayMillis = 600)) + slideInVertically { it / 2 }
-                ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Course rekomendasi →",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { onNavigateToDaftarKursus() }
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            items(dummyRekomendasi) { kursus ->
-                                KursusRekomendasiCard(
-                                    item = kursus,
-                                    onClick = { onNavigateToDetailKursus(kursus.id) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { Spacer(modifier = Modifier.height(20.dp)) }
         }
-    }
-}
-
-@Composable
-fun KursusRekomendasiCard(item: KursusItem, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .size(width = 180.dp, height = 120.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        AsyncImage(
-            model = item.imageUrl,
-            contentDescription = item.judul,
-            placeholder = ColorPainter(Color.LightGray),
-            fallback = ColorPainter(Color.Gray),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
     }
 }

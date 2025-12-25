@@ -38,6 +38,7 @@ import com.elevatestudio.careerlink.ui.screen.kursus.BadgeScanScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DashboardKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DetailKursusScreen
+import com.elevatestudio.careerlink.ui.screen.kursus.MyCoursesScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.RegistrationSuccessScreen
 
 // Definisikan rute-rute layarnya biar gak salah ketik
@@ -70,6 +71,7 @@ object Routes {
     // --- GRUP KURSUS (DARI KITA) ---
     const val KURSUS_DASHBOARD = "kursus_dashboard"
     const val DAFTAR_KURSUS = "daftar_kursus"
+    const val MY_COURSES = "my_courses"
     const val REGISTRATION_SUCCESS = "registration_success"
     const val BADGE_SCAN = "badge_scan"
     const val DETAIL_KURSUS = "detail_kursus/{kursusId}"
@@ -98,7 +100,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.DAFTAR_KURSUS, // <-- Dikembalikan ke SPLASH
+        startDestination = Routes.KURSUS_DASHBOARD, // <-- Kembali ke dashboard kita
         // Terapkan animasi default ke SEMUA layar
         enterTransition = { slideIn },
         exitTransition = { slideOut },
@@ -288,6 +290,9 @@ fun AppNavigation() {
                 },
                 onNavigateToBadgeScan = {
                     navController.navigate(Routes.BADGE_SCAN)
+                },
+                onNavigateToMyCourses = { // <-- TAMBAHKAN INI
+                    navController.navigate(Routes.MY_COURSES)
                 }
             )
         }
@@ -297,6 +302,18 @@ fun AppNavigation() {
                 onBackClick = { navController.popBackStack() },
                 onKursusClick = { kursusId ->
                     navController.navigate(Routes.detailKursus(kursusId))
+                }
+            )
+        }
+
+        composable(Routes.MY_COURSES) {
+            MyCoursesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDetailKursus = { kursusId ->
+                    navController.navigate(Routes.detailKursus(kursusId))
+                },
+                onNavigateToBadgeScan = {
+                    navController.navigate(Routes.BADGE_SCAN)
                 }
             )
         }
@@ -362,4 +379,3 @@ fun AppNavigation() {
             }
         }
     }
-
