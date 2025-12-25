@@ -17,7 +17,7 @@ import com.elevatestudio.careerlink.ui.components.PrimaryButton
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
-import com.elevatestudio.careerlink.ui.viewmodel.AuthViewModel
+import com.elevatestudio.careerlink.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -39,8 +39,30 @@ fun SignInScreen(
 
     // Observasi dari ViewModel (pesan hasil login)
     val authMessage by viewModel.authMessage.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    
+    var hasAttemptedLogin by remember { mutableStateOf(false) }
+    var shouldNavigate by remember { mutableStateOf(false) }
 
-    // Jika message berubah, tampilkan snackbar otomatis
+    // Auto-navigate jika user sudah login sebelumnya (saat pertama kali load)
+    LaunchedEffect(Unit) {
+        if (isLoggedIn) {
+            kotlinx.coroutines.delay(300)
+            onSignInClicked("", "")
+        }
+    }
+
+    // Navigate setelah login berhasil
+    LaunchedEffect(isLoggedIn, hasAttemptedLogin, isLoading) {
+        if (hasAttemptedLogin && isLoggedIn && !isLoading) {
+            kotlinx.coroutines.delay(500) // Delay untuk show snackbar dulu
+            shouldNavigate = true
+            onSignInClicked(email.value, password.value)
+        }
+    }
+
+    // Jika message berubah, tampilkan snackbar
     LaunchedEffect(authMessage) {
         authMessage?.let {
             message = it
@@ -103,32 +125,45 @@ fun SignInScreen(
 
             // 6. Tombol Masuk
             PrimaryButton(
-                text = "Masuk",
+                text = if (isLoading) "Memproses..." else "Masuk",
                 onClick = {
                     when {
                         email.value.isBlank() || password.value.isBlank() -> {
                             message = "Email dan password wajib diisi"
                         }
                         else -> {
+                            hasAttemptedLogin = true
                             message = "Sedang memproses login..."
-                            // Panggil ViewModel (email dikirim sebagai username)
+                            // Panggil ViewModel untuk login
                             viewModel.login(email.value, password.value)
-                            onSignInClicked(email.value, password.value)
+                            // Navigasi akan terjadi otomatis setelah login sukses (di LaunchedEffect)
                         }
                     }
                 },
+                enabled = !isLoading
             )
+
+            // Loading indicator
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = PrimaryGreen
+                )
+            }
 
             // Tampilkan pesan teks kecil di bawah tombol
             message?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = it,
-                    color = if (it.contains("gagal", true) || it.contains("salah", true))
-                        MaterialTheme.colorScheme.error
-                    else PrimaryGreen,
-                    fontSize = 14.sp
-                )
+                if (!isLoading) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = it,
+                        color = if (it.contains("gagal", true) || it.contains("salah", true) || it.contains("error", true))
+                            MaterialTheme.colorScheme.error
+                        else PrimaryGreen,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             // 7. Tombol Daftar jika belum punya akun

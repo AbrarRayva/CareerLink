@@ -22,19 +22,6 @@ import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
-// Data dummy
-val dummyDetailKursus = KursusDetail(
-    id = "1",
-    penyelenggara = "UPT Kewirausahaan dan Karir Unand",
-    judul = "Cara Membuat CV",
-    deskripsi = "Dalam dunia kerja yang kompetitif, CV (Curriculum Vitae) adalah kunci pertama untuk membuka peluang karier. Course ini dirancang untuk membantu kamu menyusun CV yang menarik, profesional, dan sesuai standar industri. Melalui langkah-langkah praktis, kamu akan belajar bagaimana menonjolkan pengalaman, keterampilan, dan prestasi agar menarik perhatian perekrut.",
-    lokasi = "Online (via Zoom)",
-    tanggal = "20-21 November 2025",
-    waktu = "19.00–21.00 WIB",
-    level = "Pemula – Menengah",
-    kapasitas = "100 peserta"
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailKursusScreen(
@@ -43,8 +30,14 @@ fun DetailKursusScreen(
     onBackClick: () -> Unit,
     onDaftarSuccess: () -> Unit
 ) {
-    val kursus = dummyDetailKursus
-
+    // Load course detail when screen appears
+    LaunchedEffect(kursusId) {
+        kursusId.toIntOrNull()?.let { id ->
+            viewModel.getCourseDetail(id)
+        }
+    }
+    
+    val courseDetail by viewModel.courseDetail.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDaftarDialog by remember { mutableStateOf(false) }
@@ -87,42 +80,60 @@ fun DetailKursusScreen(
                     .padding(16.dp)
             )
         }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 80.dp) // Space buat tombol
-        ) {
-            // 1. Judul
-            item {
-                Text(kursus.penyelenggara, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-                Text(
-                    text = kursus.judul,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+        ) { paddingValues ->
+        if (courseDetail == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
+        } else {
+            val kursus = courseDetail!!
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 80.dp) // Space buat tombol
+            ) {
+                // 1. Judul
+                item {
+                    Text(kursus.providerName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+                    Text(
+                        text = kursus.title,
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-            // 2. Deskripsi
-            item {
-                Text("Deskripsi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(kursus.deskripsi, style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+                // 2. Deskripsi
+                item {
+                    Text("Deskripsi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(kursus.description, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-            // 3. Detail
-            item {
-                Text("Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                KursusInfoRow(icon = Icons.Default.LocationOn, text = kursus.lokasi)
-                KursusInfoRow(icon = Icons.Default.CalendarToday, text = kursus.tanggal)
-                KursusInfoRow(icon = Icons.Default.AccessTime, text = kursus.waktu)
-                KursusInfoRow(icon = Icons.Default.BarChart, text = kursus.level)
-                KursusInfoRow(icon = Icons.Default.People, text = kursus.kapasitas)
+                // 3. Detail
+                item {
+                    Text("Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val location = "${kursus.locationType}${if (kursus.locationDetail != null) " - ${kursus.locationDetail}" else ""}"
+                    KursusInfoRow(icon = Icons.Default.LocationOn, text = location)
+                    kursus.dateStart?.let { 
+                        KursusInfoRow(icon = Icons.Default.CalendarToday, text = "Mulai: $it")
+                    }
+                    kursus.dateEnd?.let { 
+                        KursusInfoRow(icon = Icons.Default.CalendarToday, text = "Selesai: $it")
+                    }
+                    kursus.quota?.let { 
+                        KursusInfoRow(icon = Icons.Default.People, text = "Kuota: $it peserta")
+                    }
+                }
             }
         }
     }
@@ -133,7 +144,9 @@ fun DetailKursusScreen(
             onDismiss = { showDaftarDialog = false },
             onConfirm = {
                 showDaftarDialog = false
-                viewModel.daftarKursus(kursusId)
+                kursusId.toIntOrNull()?.let { id ->
+                    viewModel.daftarKursus(id)
+                }
             },
             title = "Daftar untuk kursus ini?",
             icon = { Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryGreen) }

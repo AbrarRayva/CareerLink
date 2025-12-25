@@ -4,6 +4,7 @@ package com.elevatestudio.careerlink.data.remote
 // --- IMPORT UNTUK OTENTIKASI ---
 import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
+import com.elevatestudio.careerlink.data.model.RegisterRequest
 
 // --- IMPORT UNTUK MODUL LOWONGAN ---
 import com.elevatestudio.careerlink.data.model.AjukanLowonganRequest
@@ -13,12 +14,16 @@ import com.elevatestudio.careerlink.data.model.LowonganItem
 import com.elevatestudio.careerlink.data.model.NotifikasiItem
 
 // --- IMPORT UNTUK MODUL KURSUS ---
-import com.elevatestudio.careerlink.data.model.KursusDashboardData
+import com.elevatestudio.careerlink.data.model.ApiResponse
+import com.elevatestudio.careerlink.data.model.BadgeItem
+import com.elevatestudio.careerlink.data.model.BadgeResponse
+import com.elevatestudio.careerlink.data.model.CourseStats
+import com.elevatestudio.careerlink.data.model.CourseRecap
+import com.elevatestudio.careerlink.data.model.EnrolledCourse
+import com.elevatestudio.careerlink.data.model.EnrollResponse
 import com.elevatestudio.careerlink.data.model.KursusDetail
 import com.elevatestudio.careerlink.data.model.KursusItem
-import okhttp3.MultipartBody
-import retrofit2.http.Multipart
-import retrofit2.http.Part
+import com.elevatestudio.careerlink.data.model.ScanQRRequest
 // --- SELESAI IMPORT KURSUS ---
 
 import retrofit2.Response
@@ -26,6 +31,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -33,14 +39,14 @@ import retrofit2.http.Query
 interface ApiService {
 
     // --- Otentikasi ---
-    @POST("/register")
-    suspend fun register(@Body body: AuthRequest): Response<AuthResponse>
+    @POST("api/auth/register")
+    suspend fun register(@Body body: RegisterRequest): Response<ApiResponse<com.elevatestudio.careerlink.data.model.UserData>>
 
-    @POST("/login")
-    suspend fun login(@Body body: AuthRequest): Response<AuthResponse>
+    @POST("api/auth/login")
+    suspend fun login(@Body body: AuthRequest): Response<ApiResponse<com.elevatestudio.careerlink.data.model.UserData>>
 
 
-    // --- Modul Lowongan ---
+    // --- Modul Lowongan (keep existing for compatibility) ---
     @GET("/lowongan")
     suspend fun getLowongan(
         @Query("search") query: String? = null,
@@ -70,49 +76,82 @@ interface ApiService {
     // --- MODUL KURSUS ---
 
     /**
-     * 1. Dapetin data dashboard kursus
+     * GET /api/courses - List semua kursus dengan filter optional
      */
-    @GET("/kursus/dashboard")
-    suspend fun getKursusDashboard(): Response<KursusDashboardData>
+    @GET("api/courses")
+    suspend fun getCourses(
+        @Query("location_type") locationType: String? = null,
+        @Query("provider_name") providerName: String? = null,
+        @Query("search") search: String? = null
+    ): Response<ApiResponse<List<KursusItem>>>
 
     /**
-     * 2. Dapetin list kursus (buat search)
+     * GET /api/courses/:courseId - Detail satu kursus
      */
-    @GET("/kursus")
-    suspend fun getSemuaKursus(
-        @Query("search") query: String?
-    ): Response<List<KursusItem>>
+    @GET("api/courses/{courseId}")
+    suspend fun getCourseDetail(
+        @Path("courseId") courseId: Int
+    ): Response<ApiResponse<KursusDetail>>
 
     /**
-     * 3. Dapetin detail satu kursus
+     * GET /api/courses/recommended - Kursus rekomendasi
      */
-    @GET("/kursus/{id}")
-    suspend fun getDetailKursus(
-        @Path("id") kursusId: String
-    ): Response<KursusDetail>
+    @GET("api/courses/recommended")
+    suspend fun getRecommendedCourses(
+        @Query("limit") limit: Int? = null
+    ): Response<ApiResponse<List<KursusItem>>>
 
     /**
-     * 4. Daftar ke kursus
+     * POST /api/courses/:courseId/enroll - Daftar ke kursus
      */
-    @POST("/kursus/{id}/daftar")
-    suspend fun daftarKursus(
-        @Path("id") kursusId: String
-    ): Response<GeneralResponse>
+    @POST("api/courses/{courseId}/enroll")
+    suspend fun enrollCourse(
+        @Path("courseId") courseId: Int
+    ): Response<ApiResponse<EnrollResponse>>
 
     /**
-     * 5. Upload badge (sertifikat) via file
+     * DELETE /api/courses/:courseId/unenroll - Batalkan pendaftaran
      */
-    @Multipart
-    @POST("/kursus/badge/upload")
-    suspend fun uploadBadge(
-        @Part file: MultipartBody.Part
-    ): Response<GeneralResponse>
+    @DELETE("api/courses/{courseId}/unenroll")
+    suspend fun unenrollCourse(
+        @Path("courseId") courseId: Int
+    ): Response<ApiResponse<GeneralResponse>>
 
     /**
-     * 6. Upload badge (sertifikat) via scan QR
+     * GET /api/courses/enrolled/list - Kursus yang sudah didaftar
      */
-    @POST("/kursus/badge/scan")
-    suspend fun scanBadge(
-        @Body qrData: Map<String, String>
-    ): Response<GeneralResponse>
+    @GET("api/courses/enrolled/list")
+    suspend fun getEnrolledCourses(): Response<ApiResponse<List<EnrolledCourse>>>
+
+    /**
+     * GET /api/courses/stats/overview - Statistik kursus
+     */
+    @GET("api/courses/stats/overview")
+    suspend fun getCourseStats(): Response<ApiResponse<CourseStats>>
+
+    /**
+     * GET /api/courses/recap/all - Rekap lengkap kursus dengan badge
+     */
+    @GET("api/courses/recap/all")
+    suspend fun getCourseRecap(): Response<ApiResponse<List<CourseRecap>>>
+
+    /**
+     * GET /api/badges/list - List badge yang sudah diperoleh
+     */
+    @GET("api/badges/list")
+    suspend fun getBadges(): Response<ApiResponse<List<BadgeItem>>>
+
+    /**
+     * POST /api/badges/scan-qr - Scan QR untuk mendapatkan badge
+     */
+    @POST("api/badges/scan-qr")
+    suspend fun scanQRBadge(
+        @Body body: ScanQRRequest
+    ): Response<ApiResponse<BadgeResponse>>
+
+    /**
+     * GET /api/badges/stats - Statistik badge
+     */
+    @GET("api/badges/stats")
+    suspend fun getBadgeStats(): Response<ApiResponse<Map<String, Int>>>
 }

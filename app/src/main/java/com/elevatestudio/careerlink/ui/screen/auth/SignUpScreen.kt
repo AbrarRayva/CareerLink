@@ -17,7 +17,7 @@ import com.elevatestudio.careerlink.ui.components.PrimaryButton
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
-import com.elevatestudio.careerlink.ui.viewmodel.AuthViewModel
+import com.elevatestudio.careerlink.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -114,8 +114,12 @@ fun SignUpScreen(
                         }
                         else -> {
                             message = "Sedang memproses pendaftaran..."
-                            // Panggil ViewModel (email dikirim sebagai username)
-                            viewModel.register(email.value, password.value)
+                            // Extract name from email (part before @) as fullName
+                            val emailPart = email.value.substringBefore("@")
+                            val fullName = emailPart.replace(".", " ").replaceFirstChar { 
+                                if (it.isLowerCase()) it.titlecase() else it.toString() 
+                            }
+                            viewModel.register(fullName, email.value, password.value)
                             onSignUpClicked(email.value, password.value, confirmPassword.value)
                         }
                     }

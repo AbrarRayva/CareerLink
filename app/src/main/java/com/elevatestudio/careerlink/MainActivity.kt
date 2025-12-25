@@ -7,12 +7,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.navigation.AppNavigation
 import com.elevatestudio.careerlink.ui.theme.CareerLinkTheme // Ganti nama tema defaultmu
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize ApiClient with context for AuthInterceptor
+        ApiClient.init(this)
+        
         setContent {
             CareerLinkTheme {
                 Surface(

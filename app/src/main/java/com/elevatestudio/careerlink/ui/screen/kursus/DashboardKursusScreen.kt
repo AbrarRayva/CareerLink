@@ -21,20 +21,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.elevatestudio.careerlink.data.local.TokenManager
 import com.elevatestudio.careerlink.data.model.BadgeItem
 import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
 import com.elevatestudio.careerlink.ui.theme.AppBackground
-
-// Data dummy
-val dummyBadges = listOf<BadgeItem>()
-// Contoh jika ada data:
-// val dummyBadges = listOf(
-//    BadgeItem("1", "", "Badge 1"),
-//    BadgeItem("2", "", "Badge 2"),
-// )
+import com.elevatestudio.careerlink.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,10 +39,30 @@ fun DashboardKursusScreen(
     onNavigateToDaftarKursus: () -> Unit,
     onNavigateToDetailKursus: (String) -> Unit, // Keep for future use
     onNavigateToBadgeScan: () -> Unit,
-    onNavigateToMyCourses: () -> Unit
+    onNavigateToMyCourses: () -> Unit,
+    viewModel: KursusViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
-    val username = "User" // Data dummy
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    
+    // Get user's first name from full_name
+    val userFullName = remember { tokenManager.getUserFullName() }
+    val firstName = remember(userFullName) {
+        userFullName?.split(" ")?.firstOrNull() ?: "User"
+    }
+    
     var searchQuery by remember { mutableStateOf("") }
+    
+    // Load data when screen first appears
+    LaunchedEffect(Unit) {
+        viewModel.getRecommendedCourses()
+        viewModel.getBadges()
+    }
+    
+    // Observe data from ViewModel
+    val recommendedCourses by viewModel.recommendedCourses.collectAsState()
+    val badges by viewModel.badges.collectAsState()
 
     Scaffold(
         containerColor = AppBackground,
@@ -67,7 +83,7 @@ fun DashboardKursusScreen(
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Halo, $username",
+                    text = "Halo, $firstName",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -130,7 +146,7 @@ fun DashboardKursusScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-                if (dummyBadges.isEmpty()) {
+                if (badges.isEmpty()) {
                     Text(
                         text = "Anda belum mendapatkan badge. Selesaikan course untuk mendapatkannya!",
                         style = MaterialTheme.typography.bodyMedium,
@@ -141,9 +157,12 @@ fun DashboardKursusScreen(
                     )
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(dummyBadges) { badge ->
+                        items(
+                            items = badges,
+                            key = { badge -> badge.id }
+                        ) { badge ->
                             AsyncImage(
-                                model = badge.imageUrl,
+                                model = badge.imageUrl ?: "",
                                 contentDescription = badge.title,
                                 placeholder = ColorPainter(Color.LightGray),
                                 fallback = ColorPainter(Color.Gray),

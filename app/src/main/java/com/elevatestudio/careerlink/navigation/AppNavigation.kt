@@ -100,7 +100,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.KURSUS_DASHBOARD, // <-- Kembali ke dashboard kita
+        startDestination = Routes.SPLASH, // <-- Start dari splash screen
         // Terapkan animasi default ke SEMUA layar
         enterTransition = { slideIn },
         exitTransition = { slideOut },
@@ -143,8 +143,8 @@ fun AppNavigation() {
                 onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) },
                 onNavigateToForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) },
                 onSignInClicked = { email, password ->
-                    // Login sukses, lempar ke "HOME" (Career Fair)
-                    navController.navigate(Routes.JADWAL_MENTORING) {
+                    // Login sukses, navigasi ke dashboard kursus
+                    navController.navigate(Routes.KURSUS_DASHBOARD) {
                         popUpTo(Routes.SIGN_IN) { inclusive = true }
                     }
                 }

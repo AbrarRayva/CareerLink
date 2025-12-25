@@ -1,6 +1,5 @@
 package com.elevatestudio.careerlink.ui.screen.kursus
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,48 +18,43 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.elevatestudio.careerlink.data.model.KursusItem
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.*
+import coil.compose.AsyncImage
+import com.elevatestudio.careerlink.data.model.BadgeItem
+import com.elevatestudio.careerlink.data.model.EnrolledCourse
 import com.elevatestudio.careerlink.ui.theme.AppBackground
-
-// Data dummy untuk course yang diambil pengguna
-val dummyMyCourses = listOf(
-    KursusItem("1", "UPT Unand", "Cara Membuat CV", "Selesai", "https://picsum.photos/seed/a/200"),
-    KursusItem("3", "Google", "Dasar-Dasar UX", "Sedang Berlangsung", "https://picsum.photos/seed/c/200"),
-    KursusItem("4", "Dicoding", "Memulai Pemrograman dengan Kotlin", "Selesai", "https://picsum.photos/seed/d/200")
-)
-
-// Data class dan data dummy untuk badge
-data class BadgeItem(
-    val id: String,
-    val courseTitle: String,
-    val imageVector: ImageVector
-)
-
-val dummyMyBadges = listOf(
-    BadgeItem("1", "Cara Membuat CV", Icons.Default.WorkspacePremium),
-    BadgeItem("4", "Memulai Pemrograman dengan Kotlin", Icons.Default.WorkspacePremium)
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyCoursesScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDetailKursus: (String) -> Unit,
-    onNavigateToBadgeScan: () -> Unit
+    onNavigateToBadgeScan: () -> Unit,
+    viewModel: KursusViewModel = viewModel()
 ) {
+    // Load data when screen appears
+    LaunchedEffect(Unit) {
+        viewModel.getEnrolledCourses()
+        viewModel.getBadges()
+        viewModel.getCourseStats()
+    }
+    
+    // Observe data from ViewModel
+    val enrolledCourses by viewModel.enrolledCourses.collectAsState()
+    val badges by viewModel.badges.collectAsState()
+    val courseStats by viewModel.courseStats.collectAsState()
     Scaffold(
         containerColor = AppBackground,
         topBar = {
@@ -97,9 +91,15 @@ fun MyCoursesScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Total Course Diambil: ${dummyMyCourses.size}")
-                        Text("Course Selesai: ${dummyMyCourses.count { it.tipe == "Selesai" }}")
-                        Text("Course Aktif: ${dummyMyCourses.count { it.tipe != "Selesai" }}")
+                        courseStats?.let { stats ->
+                            Text("Total Course Diambil: ${stats.totalCourses}")
+                            Text("Course Selesai: ${stats.completedCourses}")
+                            Text("Course Aktif: ${stats.activeCourses}")
+                        } ?: run {
+                            Text("Total Course Diambil: ${enrolledCourses.size}")
+                            Text("Course Selesai: ${enrolledCourses.count { it.status == "Completed" }}")
+                            Text("Course Aktif: ${enrolledCourses.count { it.status == "Active" }}")
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -131,7 +131,7 @@ fun MyCoursesScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (dummyMyBadges.isEmpty()) {
+                if (badges.isEmpty()) {
                     Text(
                         text = "Anda belum memiliki badge. Selesaikan course untuk mendapatkannya!",
                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -141,7 +141,7 @@ fun MyCoursesScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(dummyMyBadges) { badge ->
+                        items(badges) { badge ->
                             BadgeItemCard(badge = badge)
                         }
                     }
@@ -159,10 +159,10 @@ fun MyCoursesScreen(
                 )
             }
 
-            items(dummyMyCourses) { kursus ->
+            items(enrolledCourses) { kursus ->
                 KursusItemCard(
                     kursus = kursus,
-                    onClick = { onNavigateToDetailKursus(kursus.id) },
+                    onClick = { onNavigateToDetailKursus(kursus.id.toString()) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -177,9 +177,11 @@ fun BadgeItemCard(badge: BadgeItem, modifier: Modifier = Modifier) {
         modifier = modifier.width(80.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            imageVector = badge.imageVector,
-            contentDescription = "Badge untuk ${badge.courseTitle}",
+        AsyncImage(
+            model = badge.imageUrl ?: "",
+            contentDescription = "Badge untuk ${badge.title}",
+            placeholder = androidx.compose.ui.graphics.painter.ColorPainter(Color.LightGray),
+            fallback = androidx.compose.ui.graphics.painter.ColorPainter(Color.Gray),
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape),
@@ -187,7 +189,7 @@ fun BadgeItemCard(badge: BadgeItem, modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = badge.courseTitle,
+            text = badge.title,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             maxLines = 2,
@@ -197,7 +199,7 @@ fun BadgeItemCard(badge: BadgeItem, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun KursusItemCard(kursus: KursusItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun KursusItemCard(kursus: EnrolledCourse, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -205,11 +207,11 @@ fun KursusItemCard(kursus: KursusItem, onClick: () -> Unit, modifier: Modifier =
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = kursus.judul, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(text = kursus.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Oleh: ${kursus.penyelenggara}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Text(text = "Oleh: ${kursus.providerName}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Status: ${kursus.tipe}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Status: ${kursus.status}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

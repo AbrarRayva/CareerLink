@@ -35,13 +35,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import com.elevatestudio.careerlink.ui.screen.lowongan.SubmissionState
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -59,10 +67,33 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BadgeScanScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: KursusViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val submissionState by viewModel.submissionState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     var showCameraPreview by remember { mutableStateOf(false) }
+    
+    // Handle submission state changes
+    LaunchedEffect(submissionState) {
+        when (submissionState) {
+            is SubmissionState.Success -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Badge berhasil diperoleh!")
+                }
+                viewModel.resetSubmissionState()
+            }
+            is SubmissionState.Error -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar((submissionState as SubmissionState.Error).message)
+                }
+                viewModel.resetSubmissionState()
+            }
+            else -> {}
+        }
+    }
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -75,7 +106,9 @@ fun BadgeScanScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
-            uri?.let { processImageFromUri(context, it) }
+            uri?.let { processImageFromUri(context, it) { courseId ->
+                viewModel.scanSertifikat(courseId)
+            }}
         }
     )
 
@@ -92,6 +125,7 @@ fun BadgeScanScreen(
     )
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Scan Badge") },
@@ -107,9 +141,15 @@ fun BadgeScanScreen(
         if (showCameraPreview && hasCameraPermission) {
             Box(modifier = Modifier.fillMaxSize()) {
                 CameraView(
-                    onQrScanned = {
+                    onQrScanned = { qrData ->
                         showCameraPreview = false
-                        Toast.makeText(context, "QR Scanned: $it", Toast.LENGTH_LONG).show()
+                        // QR data should be course_id
+                        val courseId = qrData.toIntOrNull()
+                        if (courseId != null) {
+                            viewModel.scanSertifikat(courseId)
+                        } else {
+                            Toast.makeText(context, "QR Code tidak valid: $qrData", Toast.LENGTH_LONG).show()
+                        }
                     }
                 )
             }
@@ -200,7 +240,7 @@ fun BadgeScanScreen(
     }
 }
 
-private fun processImageFromUri(context: Context, uri: Uri) {
+private fun processImageFromUri(context: Context, uri: Uri, onCourseIdScanned: (Int) -> Unit) {
     try {
         val image = InputImage.fromFilePath(context, uri)
         val options = BarcodeScannerOptions.Builder()
@@ -212,8 +252,13 @@ private fun processImageFromUri(context: Context, uri: Uri) {
             .addOnSuccessListener { barcodes ->
                 if (barcodes.isNotEmpty()) {
                     for (barcode in barcodes) {
-                        val rawValue = barcode.rawValue
-                        Toast.makeText(context, "QR Scanned: $rawValue", Toast.LENGTH_LONG).show()
+                        val rawValue = barcode.rawValue ?: ""
+                        val courseId = rawValue.toIntOrNull()
+                        if (courseId != null) {
+                            onCourseIdScanned(courseId)
+                        } else {
+                            Toast.makeText(context, "QR Code tidak valid: $rawValue", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 } else {
                     Toast.makeText(context, "Tidak ada QR code ditemukan di gambar.", Toast.LENGTH_SHORT).show()

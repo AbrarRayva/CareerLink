@@ -22,28 +22,28 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.KursusItem
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
-// Data dummy
-val dummyKursusList = listOf(
-    KursusItem("1", "UPT Kewirausahaan dan Karir Unand", "Cara Membuat CV", "Offline", "https://picsum.photos/seed/a/200"),
-    KursusItem("2", "FTI Unand", "Pintar UI/UX", "Online", "https://picsum.photos/seed/b/200"),
-    KursusItem("3", "UPT Kewirausahaan dan Karir Unand", "Teknik Menjadi Wirausahawan", "Online", "https://picsum.photos/seed/c/200"),
-    KursusItem("4", "Simplilearn", "Latih Berpikir Kreatif", "Online", "https://picsum.photos/seed/d/200"),
-    KursusItem("5", "Microsoft", "UI/UX Course", "Online", "https://picsum.photos/seed/e/200")
-)
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun DaftarKursusScreen(
     onBackClick: () -> Unit,
-    onKursusClick: (String) -> Unit
+    onKursusClick: (String) -> Unit,
+    viewModel: KursusViewModel = viewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    
+    // Load courses when screen appears or search query changes
+    LaunchedEffect(searchQuery) {
+        viewModel.getCourses(search = if (searchQuery.isBlank()) null else searchQuery)
+    }
+    
+    val courses by viewModel.courses.collectAsState()
 
     Scaffold(
         containerColor = AppBackground,
@@ -85,7 +85,7 @@ fun DaftarKursusScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
         ) {
-            itemsIndexed(dummyKursusList) { index, kursus ->
+            itemsIndexed(courses) { index, kursus ->
                 // --- INI ANIMASI LIST ITEM ---
                 AnimatedVisibility(
                     visible = true, // Selalu true, tapi 'enter' akan jalan pas pertama nampil
@@ -94,7 +94,7 @@ fun DaftarKursusScreen(
                 ) {
                     KursusListCard(
                         item = kursus,
-                        onClick = { onKursusClick(kursus.id) }
+                        onClick = { onKursusClick(kursus.id.toString()) }
                     )
                 }
             }
@@ -116,8 +116,8 @@ fun KursusListCard(item: KursusItem, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = item.imageUrl,
-                contentDescription = item.judul,
+                model = item.imageUrl ?: "",
+                contentDescription = item.title,
                 placeholder = ColorPainter(Color.LightGray),
                 fallback = ColorPainter(Color.Gray),
                 contentScale = ContentScale.Crop,
@@ -127,9 +127,9 @@ fun KursusListCard(item: KursusItem, onClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.penyelenggara, style = MaterialTheme.typography.bodySmall)
-                Text(item.judul, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Text(item.tipe, style = MaterialTheme.typography.bodyMedium)
+                Text(item.providerName, style = MaterialTheme.typography.bodySmall)
+                Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(item.locationType, style = MaterialTheme.typography.bodyMedium)
             }
             Icon(Icons.Default.PlayArrow, contentDescription = "Lihat", tint = PrimaryGreen)
         }
