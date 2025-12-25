@@ -11,10 +11,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Clear // <-- IMPORT BARU UNTUK 'X'
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -41,11 +43,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun AjukanLowonganScreen(
     lowonganId: String,
-    viewModel: LowonganViewModel = viewModel(),
+    viewModel: AjukanLowonganViewModel = viewModel(),
     onBackClick: () -> Unit,
     onGoToHome: () -> Unit
 ) {
-    // (Semua state dan launcher tetap sama)
     val state by viewModel.lamaranState.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -74,9 +75,7 @@ fun AjukanLowonganScreen(
         if (uri != null) {
             val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.statSize ?: 0
             if (fileSize > maxFileSize) {
-                scope.launch {
-                    snackbarHostState.showSnackbar("File CV terlalu besar! Maksimal 10MB.")
-                }
+                scope.launch { snackbarHostState.showSnackbar("File CV terlalu besar! Maksimal 10MB.") }
             } else {
                 viewModel.onLamaranEvent(LamaranFormEvent.CvUploaded(uri.toString()))
             }
@@ -89,9 +88,7 @@ fun AjukanLowonganScreen(
         if (uri != null) {
             val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.statSize ?: 0
             if (fileSize > maxFileSize) {
-                scope.launch {
-                    snackbarHostState.showSnackbar("File Portofolio terlalu besar! Maksimal 10MB.")
-                }
+                scope.launch { snackbarHostState.showSnackbar("File Portofolio terlalu besar! Maksimal 10MB.") }
             } else {
                 viewModel.onLamaranEvent(LamaranFormEvent.PortofolioUploaded(uri.toString()))
             }
@@ -104,9 +101,7 @@ fun AjukanLowonganScreen(
         if (uri != null) {
             val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.statSize ?: 0
             if (fileSize > maxFileSize) {
-                scope.launch {
-                    snackbarHostState.showSnackbar("File Surat Rekomendasi terlalu besar! Maksimal 10MB.")
-                }
+                scope.launch { snackbarHostState.showSnackbar("File Surat Rekomendasi terlalu besar! Maksimal 10MB.") }
             } else {
                 viewModel.onLamaranEvent(LamaranFormEvent.SuratRekomendasiUploaded(uri.toString()))
             }
@@ -130,19 +125,13 @@ fun AjukanLowonganScreen(
                 )
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             PrimaryButton(
                 text = "KIRIM LAMARAN",
-                onClick = {
-                    showKirimDialog = true
-                },
+                onClick = { showKirimDialog = true },
                 enabled = state.isFormValid && (submissionState != SubmissionState.Loading),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
             )
         }
     ) { paddingValues ->
@@ -153,7 +142,6 @@ fun AjukanLowonganScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Bagian 1: Data Diri (Tetap sama)
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(
@@ -173,13 +161,29 @@ fun AjukanLowonganScreen(
 
                         OutlinedTextField(
                             value = state.tanggalLahir,
-                            onValueChange = { viewModel.onLamaranEvent(LamaranFormEvent.TanggalLahirChanged(it)) },
+                            onValueChange = {
+                                // Biarkan user ngetik apapun (angka & simbol)
+                                viewModel.onLamaranEvent(LamaranFormEvent.TanggalLahirChanged(it))
+                            },
                             label = { Text("Tanggal Lahir") },
-                            placeholder = { Text("DD/MM/YYYY") },
+                            placeholder = { Text("20/03/2005") }, // Contoh format
                             trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+
+                            isError = state.tanggalLahirError != null,
+                            supportingText = {
+                                if (state.tanggalLahirError != null) {
+                                    Text(
+                                        text = state.tanggalLahirError!!,
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                         )
+
 
                         FormDropdownMenu(
                             label = "Jenis Kelamin",
@@ -202,13 +206,22 @@ fun AjukanLowonganScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
                         OutlinedTextField(
                             value = state.nomorAktif,
                             onValueChange = { viewModel.onLamaranEvent(LamaranFormEvent.NomorAktifChanged(it)) },
-                            label = { Text("Nomor Aktif") },
-                            placeholder = { Text("+62") },
+                            label = { Text("Nomor Aktif (WhatsApp)") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            // ERROR HANDLING
+                            isError = state.nomorAktifError != null,
+                            supportingText = {
+                                if (state.nomorAktifError != null) {
+                                    Text(state.nomorAktifError!!, color = MaterialTheme.colorScheme.error)
+                                }
+                            },
+                            // KEYBOARD PHONE
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
 
                         OutlinedTextField(
@@ -230,14 +243,11 @@ fun AjukanLowonganScreen(
                 }
             }
 
-            // Bagian 2: Dokumen
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.padding(16.dp)) {
                         Text("Harap Lengkapi Dokumen", style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        // --- INI BAGIAN YANG DIPERBARUI ---
 
                         val namaPlaceholder = if (state.namaLengkap.isBlank()) "NamaLengkap" else state.namaLengkap.replace(' ', '_')
 
@@ -248,7 +258,7 @@ fun AjukanLowonganScreen(
                             fileUri = state.cvUri,
                             isUploaded = state.cvUri != null,
                             onClick = { cvLauncher.launch("application/pdf") },
-                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearCv) } // <-- Panggil event Clear
+                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearCv) }
                         )
                         FileUploadBox(
                             title = "Upload Portofolio (.pdf, max 10MB)",
@@ -257,7 +267,7 @@ fun AjukanLowonganScreen(
                             fileUri = state.portofolioUri,
                             isUploaded = state.portofolioUri != null,
                             onClick = { portofolioLauncher.launch("application/pdf") },
-                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearPortofolio) } // <-- Panggil event Clear
+                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearPortofolio) }
                         )
                         FileUploadBox(
                             title = "Upload Surat Rekomendasi (.pdf, max 10MB)",
@@ -266,15 +276,14 @@ fun AjukanLowonganScreen(
                             fileUri = state.suratRekomendasiUri,
                             isUploaded = state.suratRekomendasiUri != null,
                             onClick = { rekomenLauncher.launch("application/pdf") },
-                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearSuratRekomendasi) } // <-- Panggil event Clear
+                            onClearClick = { viewModel.onLamaranEvent(LamaranFormEvent.ClearSuratRekomendasi) }
                         )
                     }
                 }
             }
-            item { Spacer(modifier = Modifier.height(80.dp)) } // Spacer buat tombol
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
 
-        // --- DIALOG-DIALOG (Tidak berubah) ---
         if (showKirimDialog) {
             ConfirmationDialog(
                 onDismiss = { showKirimDialog = false },
@@ -325,7 +334,7 @@ fun AjukanLowonganScreen(
     }
 }
 
-// Composable untuk Dropdown (Tidak berubah)
+// ... (FormDropdownMenu, FileUploadBox, getFileName tetap sama seperti sebelumnya) ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormDropdownMenu(
@@ -372,8 +381,6 @@ fun FormDropdownMenu(
     }
 }
 
-
-// --- FUNGSI FILEUPLOADBOX DIPERBARUI ---
 @Composable
 fun FileUploadBox(
     title: String,
@@ -382,10 +389,9 @@ fun FileUploadBox(
     fileUri: String?,
     isUploaded: Boolean,
     onClick: () -> Unit,
-    onClearClick: () -> Unit // <-- TAMBAHAN PARAMETER
+    onClearClick: () -> Unit
 ) {
     val context = LocalContext.current
-
     val displayText = if (isUploaded && fileUri != null) {
         getFileName(context, Uri.parse(fileUri))
     } else {
@@ -394,13 +400,7 @@ fun FileUploadBox(
 
     Text(title, fontWeight = FontWeight.Bold)
     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-
-    Text(
-        text = ketentuanNamaFile,
-        style = MaterialTheme.typography.bodySmall,
-        color = PrimaryGreen,
-        fontWeight = FontWeight.SemiBold
-    )
+    Text(text = ketentuanNamaFile, style = MaterialTheme.typography.bodySmall, color = PrimaryGreen, fontWeight = FontWeight.SemiBold)
 
     Spacer(modifier = Modifier.height(8.dp))
     Box(
@@ -409,42 +409,24 @@ fun FileUploadBox(
             .height(80.dp)
             .border(1.dp, SecondaryGreen, RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
-            .clickable { onClick() } // Klik di mana aja di box buat milih file
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Default.UploadFile,
-                contentDescription = null,
-                tint = if (isUploaded) PrimaryGreen else SecondaryGreen
-            )
+            Icon(Icons.Default.UploadFile, contentDescription = null, tint = if (isUploaded) PrimaryGreen else SecondaryGreen)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = displayText,
-                color = if (isUploaded) PrimaryGreen else Color.Gray,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.weight(1f), // Bikin teks ngisi ruang
-                maxLines = 2 // Kalo nama filenya panjang
-            )
-
-            // --- TOMBOL 'X' BARU ---
+            Text(text = displayText, color = if (isUploaded) PrimaryGreen else Color.Gray, textAlign = TextAlign.Start, modifier = Modifier.weight(1f), maxLines = 2)
             if (isUploaded) {
-                IconButton(onClick = onClearClick) { // Panggil event onClearClick
-                    Icon(
-                        Icons.Default.Clear, // Ikon 'X'
-                        contentDescription = "Hapus file",
-                        tint = Color.Gray
-                    )
+                IconButton(onClick = onClearClick) {
+                    Icon(Icons.Default.Clear, contentDescription = "Hapus file", tint = Color.Gray)
                 }
             }
-            // --- SELESAI TOMBOL 'X' ---
         }
     }
     Spacer(modifier = Modifier.height(16.dp))
 }
 
-// --- FUNGSI HELPER (Tidak berubah) ---
 private fun getFileName(context: Context, uri: Uri): String {
     var name: String? = null
     if (uri.scheme == "content") {
@@ -452,9 +434,7 @@ private fun getFileName(context: Context, uri: Uri): String {
         cursor?.use {
             if (it.moveToFirst()) {
                 val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex != -1) {
-                    name = it.getString(nameIndex)
-                }
+                if (nameIndex != -1) name = it.getString(nameIndex)
             }
         }
     }

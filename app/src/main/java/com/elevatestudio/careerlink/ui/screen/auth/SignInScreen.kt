@@ -1,3 +1,4 @@
+// Lokasi: ui/screen/auth/SignInScreen.kt
 package com.elevatestudio.careerlink.ui.screen.auth
 
 import androidx.compose.foundation.background
@@ -17,40 +18,49 @@ import com.elevatestudio.careerlink.ui.components.PrimaryButton
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
+import com.elevatestudio.careerlink.ui.viewmodel.AuthState
 import com.elevatestudio.careerlink.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay // WAJIB IMPORT INI
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SignInScreen(
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onSignInClicked: (String, String) -> Unit // Kirim email & pass buat dicek
+    onSignInSuccess: () -> Unit
 ) {
     val viewModel: AuthViewModel = viewModel()
-
-    // Bikin state buat nampung ketikan email & password
+    val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
-
-    // State untuk pesan feedback dan snackbar
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    var message by remember { mutableStateOf<String?>(null) }
 
-    // Observasi dari ViewModel (pesan hasil login)
-    val authMessage by viewModel.authMessage.collectAsState()
+    // --- LOGIC BARU: PESAN DULU, BARU PINDAH ---
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                // 1. Tampilkan Pesan Login Sukses
+                launch {
+                    snackbarHostState.showSnackbar("Login berhasil! Selamat datang.")
+                }
 
-    // Jika message berubah, tampilkan snackbar otomatis
-    LaunchedEffect(authMessage) {
-        authMessage?.let {
-            message = it
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(it)
+                // 2. Tunggu 1.5 detik
+                delay(1500)
+
+                // 3. Pindah ke Home
+                onSignInSuccess()
+                viewModel.resetState()
             }
+            is AuthState.Error -> {
+                snackbarHostState.showSnackbar((authState as AuthState.Error).message)
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
-    // Scaffold agar snackbar bisa tampil
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
@@ -58,42 +68,20 @@ fun SignInScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppBackground)
-                .padding(horizontal = 24.dp, vertical = 32.dp)
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Logo
             AppLogo()
-            Spacer(modifier = Modifier.height(24.dp)) // Kasih jarak
-
-            // 2. Judul
-            Text(
-                text = "Masuk Ke Akun Anda",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextBlack
-            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Masuk Ke Akun Anda", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 3. Form Input Email
-            AuthTextField(
-                value = email.value,
-                onValueChange = { email.value = it },
-                label = "Alamat Email",
-                keyboardType = KeyboardType.Email // Biar keyboardnya ada '@'
-            )
+            AuthTextField(value = email.value, onValueChange = { email.value = it }, label = "Email", keyboardType = KeyboardType.Email)
             Spacer(modifier = Modifier.height(16.dp))
+            AuthTextField(value = password.value, onValueChange = { password.value = it }, label = "Kata Sandi", isPassword = true)
 
-            // 4. Form Input Password
-            AuthTextField(
-                value = password.value,
-                onValueChange = { password.value = it },
-                label = "Kata Sandi",
-                isPassword = true // Biar jadi bintang-bintang
-            )
             Spacer(modifier = Modifier.height(8.dp))
-
-            // 5. Lupa Password (di pojok kanan)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onNavigateToForgotPassword) {
                     Text(text = "Lupa Password?", color = PrimaryGreen)
@@ -101,38 +89,13 @@ fun SignInScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 6. Tombol Masuk
             PrimaryButton(
-                text = "Masuk",
-                onClick = {
-                    when {
-                        email.value.isBlank() || password.value.isBlank() -> {
-                            message = "Email dan password wajib diisi"
-                        }
-                        else -> {
-                            message = "Sedang memproses login..."
-                            // Panggil ViewModel (email dikirim sebagai username)
-                            viewModel.login(email.value, password.value)
-                            onSignInClicked(email.value, password.value)
-                        }
-                    }
-                },
+                text = if (authState is AuthState.Loading) "Sedang Masuk..." else "Masuk",
+                onClick = { viewModel.login(email.value, password.value, context) },
+                enabled = authState !is AuthState.Loading
             )
 
-            // Tampilkan pesan teks kecil di bawah tombol
-            message?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = it,
-                    color = if (it.contains("gagal", true) || it.contains("salah", true))
-                        MaterialTheme.colorScheme.error
-                    else PrimaryGreen,
-                    fontSize = 14.sp
-                )
-            }
-
-            // 7. Tombol Daftar jika belum punya akun
-            Spacer(modifier = Modifier.weight(1f)) // Dorong item ini ke paling bawah
+            Spacer(modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "Belum punya akun?", color = TextBlack)
                 TextButton(onClick = onNavigateToSignUp) {

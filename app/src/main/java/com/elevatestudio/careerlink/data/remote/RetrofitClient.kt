@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     // Pastikan IP ini benar untuk Emulator
-    private const val BASE_URL = "http://192.168.18.27:3000/api/"
+    private const val BASE_URL = "http://192.168.100.32:3000/"
 
     // Tambahkan settingan Timeout biar gak gampang putus saat upload file
     private val client = OkHttpClient.Builder()

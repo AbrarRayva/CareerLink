@@ -1,4 +1,4 @@
-// Lokasi: ui/screen/lowongan/LowonganViewModel.kt
+// Lokasi: ui/screen/lowongan/AjukanLowonganViewModel.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import android.content.Context
@@ -7,14 +7,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elevatestudio.careerlink.data.remote.RetrofitClient
 import com.elevatestudio.careerlink.utils.FileUtils
+import com.elevatestudio.careerlink.utils.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
@@ -31,25 +32,28 @@ data class AjukanLamaranState(
     val jenisKelamin: String = "",
     val pendidikan: String = "",
     val programStudi: String = "",
-    val nomorAktif: String = "",
+    val nomorAktif: String = "+62",
     val ceritakanDirimu: String = "",
     val cvUri: String? = null,
     val portofolioUri: String? = null,
     val suratRekomendasiUri: String? = null,
+
+    val tanggalLahirError: String? = null,
+    val nomorAktifError: String? = null
 ) {
     val wordCount: Int
-        get() = ceritakanDirimu.split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        get() = if (ceritakanDirimu.isBlank()) 0 else ceritakanDirimu.trim().split(Regex("\\s+")).size
 
     val isFormValid: Boolean
         get() = namaLengkap.isNotBlank() &&
-                tanggalLahir.isNotBlank() &&
+                tanggalLahir.isNotBlank() && tanggalLahirError == null && // Harus Valid
                 jenisKelamin.isNotBlank() &&
                 pendidikan.isNotBlank() &&
                 programStudi.isNotBlank() &&
-                nomorAktif.isNotBlank() &&
+                nomorAktif.isNotBlank() && nomorAktifError == null &&
                 wordCount >= 80 &&
                 cvUri != null &&
-                suratRekomendasiUri != null // <-- Validasi Surat Rekomendasi Wajib
+                suratRekomendasiUri != null
 }
 
 sealed interface LamaranFormEvent {
@@ -63,15 +67,13 @@ sealed interface LamaranFormEvent {
     data class CvUploaded(val uri: String?) : LamaranFormEvent
     data class PortofolioUploaded(val uri: String?) : LamaranFormEvent
     data class SuratRekomendasiUploaded(val uri: String?) : LamaranFormEvent
-
     object ClearCv : LamaranFormEvent
     object ClearPortofolio : LamaranFormEvent
     object ClearSuratRekomendasi : LamaranFormEvent
-
     object Submit : LamaranFormEvent
 }
 
-class LowonganViewModel : ViewModel() {
+class AjukanLowonganViewModel : ViewModel() {
 
     private val _lamaranState = MutableStateFlow(AjukanLamaranState())
     val lamaranState: StateFlow<AjukanLamaranState> = _lamaranState.asStateFlow()
@@ -79,14 +81,51 @@ class LowonganViewModel : ViewModel() {
     private val _submissionState = MutableStateFlow<SubmissionState>(SubmissionState.Idle)
     val submissionState: StateFlow<SubmissionState> = _submissionState.asStateFlow()
 
+    // --- REGEX STRICT (TGL LAHIR) ---
+    // Penjelasan:
+    // (0[1-9]|[12][0-9]|3[01]) -> Tanggal 01-31
+    // / -> Wajib ada garis miring
+    // (0[1-9]|1[012]) -> Bulan 01-12
+    // / -> Wajib ada garis miring
+    // \d{4} -> Tahun 4 digit (misal 2005)
+    // ^ dan $ -> Pastikan dari awal sampai akhir formatnya begitu
+    private val dateRegex = Regex("""^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$""")
+
+    // Regex HP (Tetap sama)
+    private val phoneRegex = Regex("""^(\+62)8[1-9][0-9]{6,11}$""")
+
     fun onLamaranEvent(event: LamaranFormEvent) {
         when (event) {
             is LamaranFormEvent.NamaChanged -> _lamaranState.update { it.copy(namaLengkap = event.value) }
-            is LamaranFormEvent.TanggalLahirChanged -> _lamaranState.update { it.copy(tanggalLahir = event.value) }
+
+            // --- VALIDASI TANGGAL LAHIR MANUAL ---
+            is LamaranFormEvent.TanggalLahirChanged -> {
+                val input = event.value
+
+                // Cek Error: Jika input tidak sesuai pola Regex
+                val error = if (input.isNotEmpty() && !input.matches(dateRegex)) {
+                    "Wajib format DD/MM/YYYY (Contoh: 20/03/2005)"
+                } else null
+
+                // Simpan apa adanya ketikan user
+                _lamaranState.update { it.copy(tanggalLahir = input, tanggalLahirError = error) }
+            }
+
             is LamaranFormEvent.JenisKelaminChanged -> _lamaranState.update { it.copy(jenisKelamin = event.value) }
             is LamaranFormEvent.PendidikanChanged -> _lamaranState.update { it.copy(pendidikan = event.value) }
             is LamaranFormEvent.ProgramStudiChanged -> _lamaranState.update { it.copy(programStudi = event.value) }
-            is LamaranFormEvent.NomorAktifChanged -> _lamaranState.update { it.copy(nomorAktif = event.value) }
+
+            // --- VALIDASI NO HP ---
+            is LamaranFormEvent.NomorAktifChanged -> {
+                // Biarkan user ngetik manual juga, tapi kita ingatkan kalau salah
+                val input = event.value
+                val error = if (input.isNotEmpty() && !input.matches(phoneRegex)) {
+                    "Wajib diawali +628... (Contoh: +62812345678)"
+                } else null
+
+                _lamaranState.update { it.copy(nomorAktif = input, nomorAktifError = error) }
+            }
+
             is LamaranFormEvent.CeritakanDirimuChanged -> _lamaranState.update { it.copy(ceritakanDirimu = event.value) }
             is LamaranFormEvent.CvUploaded -> _lamaranState.update { it.copy(cvUri = event.uri) }
             is LamaranFormEvent.PortofolioUploaded -> _lamaranState.update { it.copy(portofolioUri = event.uri) }
@@ -96,36 +135,39 @@ class LowonganViewModel : ViewModel() {
             LamaranFormEvent.ClearPortofolio -> _lamaranState.update { it.copy(portofolioUri = null) }
             LamaranFormEvent.ClearSuratRekomendasi -> _lamaranState.update { it.copy(suratRekomendasiUri = null) }
 
-            LamaranFormEvent.Submit -> { /* No-op, dipanggil langsung dari UI */ }
+            LamaranFormEvent.Submit -> { /* No-op */ }
         }
     }
 
     fun submitLamaran(context: Context, lowonganId: String) {
         val currentState = _lamaranState.value
-        if (!currentState.isFormValid) return
+        if (!currentState.isFormValid) {
+            _submissionState.value = SubmissionState.Error("Mohon perbaiki data yang bertanda merah!")
+            return
+        }
 
         viewModelScope.launch {
             _submissionState.value = SubmissionState.Loading
             try {
-                // 1. SIAPKAN FILE CV (Wajib)
+                val userPreferences = UserPreferences(context)
+                val tokenString = userPreferences.authToken.first()
+                if (tokenString.isNullOrEmpty()) {
+                    _submissionState.value = SubmissionState.Error("Anda belum login.")
+                    return@launch
+                }
+                val token = "Bearer $tokenString"
+
                 val cvUri = Uri.parse(currentState.cvUri)
                 val cvFile = FileUtils.getFileFromUri(context, cvUri)
-
-                // 2. SIAPKAN SURAT REKOMENDASI (Wajib)
-                val recUri = Uri.parse(currentState.suratRekomendasiUri!!) // Aman di-force unwrap karena isFormValid
+                val recUri = Uri.parse(currentState.suratRekomendasiUri!!)
                 val recFile = FileUtils.getFileFromUri(context, recUri)
 
                 if (cvFile != null && recFile != null) {
-
-                    // -- Proses CV --
                     val cvRequest = cvFile.asRequestBody("application/pdf".toMediaTypeOrNull())
                     val cvPart = MultipartBody.Part.createFormData("cv", cvFile.name, cvRequest)
-
-                    // -- Proses Surat Rekomendasi --
                     val recRequest = recFile.asRequestBody("application/pdf".toMediaTypeOrNull())
                     val recPart = MultipartBody.Part.createFormData("recommendation_letter", recFile.name, recRequest)
 
-                    // -- Proses Portofolio (Opsional) --
                     var portfolioPart: MultipartBody.Part? = null
                     if (currentState.portofolioUri != null) {
                         val portUri = Uri.parse(currentState.portofolioUri)
@@ -136,45 +178,42 @@ class LowonganViewModel : ViewModel() {
                         }
                     }
 
-                    // 3. SIAPKAN DATA TEKS
-                    fun createPart(value: String): RequestBody {
+                    fun createPart(value: String): okhttp3.RequestBody {
                         return value.toRequestBody("text/plain".toMediaTypeOrNull())
                     }
 
-                    val fullNamePart = createPart(currentState.namaLengkap)
-                    val dobPart = createPart(currentState.tanggalLahir)
-                    val genderPart = createPart(currentState.jenisKelamin)
-                    val educationPart = createPart(currentState.pendidikan)
-                    val majorPart = createPart(currentState.programStudi)
-                    val phonePart = createPart(currentState.nomorAktif)
-                    val aboutPart = createPart(currentState.ceritakanDirimu)
+                    // KONVERSI TANGGAL SEBELUM KIRIM KE DATABASE (YYYY-MM-DD)
+                    // Input User: 20/03/2005
+                    // Output ke API: 2005-03-20 (Agar MySQL tidak error)
+                    val rawDate = currentState.tanggalLahir
+                    val dateParts = rawDate.split("/")
+                    val apiDate = if (dateParts.size == 3) {
+                        "${dateParts[2]}-${dateParts[1]}-${dateParts[0]}" // YYYY-MM-DD
+                    } else rawDate
 
-                    // 4. TOKEN (Hardcoded sementara)
-                    val token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3NjQ5MzI0OTAsImV4cCI6MTc2NTUzNzI5MH0.0hJfzE1uaKkY3Fdz6Uo_tjBMZO-f2HQQftXJB6gBWSI"
-
-                    // 5. TEMBAK API
                     val response = RetrofitClient.instance.ajukanLowongan(
                         token = token,
                         lowonganId = lowonganId,
                         cv = cvPart,
-                        recommendation_letter = recPart, // Masuk sebagai parameter wajib
-                        portfolio = portfolioPart,       // Masuk sebagai parameter opsional (Multipart)
-                        fullName = fullNamePart,
-                        dob = dobPart,
-                        gender = genderPart,
-                        education = educationPart,
-                        major = majorPart,
-                        phone = phonePart,
-                        aboutMe = aboutPart
+                        recommendation_letter = recPart,
+                        portfolio = portfolioPart,
+                        fullName = createPart(currentState.namaLengkap),
+                        dob = createPart(apiDate), // <-- Kirim tanggal yg sudah dibalik
+                        gender = createPart(currentState.jenisKelamin),
+                        education = createPart(currentState.pendidikan),
+                        major = createPart(currentState.programStudi),
+                        phone = createPart(currentState.nomorAktif),
+                        aboutMe = createPart(currentState.ceritakanDirimu)
                     )
 
                     if (response.isSuccessful) {
                         _submissionState.value = SubmissionState.Success
                     } else {
-                        _submissionState.value = SubmissionState.Error("Gagal: ${response.message()}")
+                        val errorMsg = response.errorBody()?.string() ?: response.message()
+                        _submissionState.value = SubmissionState.Error("Gagal: $errorMsg")
                     }
                 } else {
-                    _submissionState.value = SubmissionState.Error("Gagal membaca file dokumen")
+                    _submissionState.value = SubmissionState.Error("Gagal membaca file.")
                 }
             } catch (e: Exception) {
                 _submissionState.value = SubmissionState.Error("Error: ${e.message}")

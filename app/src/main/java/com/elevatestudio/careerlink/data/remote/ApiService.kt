@@ -2,6 +2,7 @@
 package com.elevatestudio.careerlink.data.remote
 
 // --- IMPORT UNTUK OTENTIKASI ---
+import com.elevatestudio.careerlink.data.model.ApplicationDetail
 import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
 
@@ -10,6 +11,7 @@ import com.elevatestudio.careerlink.data.model.GeneralResponse
 import com.elevatestudio.careerlink.data.model.LowonganDetail
 import com.elevatestudio.careerlink.data.model.LowonganItem
 import com.elevatestudio.careerlink.data.model.NotifikasiItem
+import com.elevatestudio.careerlink.data.model.RiwayatItem
 
 // --- IMPORT UNTUK MODUL KURSUS ---
 import com.elevatestudio.careerlink.data.model.KursusDashboardData
@@ -34,26 +36,36 @@ import okhttp3.RequestBody
 interface ApiService {
 
     // --- Otentikasi ---
-    @POST("/register")
+    @POST("api/auth/register")
     suspend fun register(@Body body: AuthRequest): Response<AuthResponse>
 
-    @POST("/login")
+    @POST("api/auth/login")
     suspend fun login(@Body body: AuthRequest): Response<AuthResponse>
+
+    // --- [BARU] UPDATE FCM TOKEN ---
+    // Dipanggil saat aplikasi dibuka untuk update token notifikasi
+    @POST("api/auth/update-fcm")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Body data: Map<String, String> // Mengirim {"fcm_token": "xyz..."}
+    ): Response<GeneralResponse>
 
 
     // --- Modul Lowongan ---
-    @GET("jobs")
+    @GET("api/jobs")
     suspend fun getLowongan(
-        @Query("search") query: String? = null
+        @Query("search") search: String? = null,
+        @Query("type") type: String? = null,
+        @Header("Authorization") token: String? = null
     ): Response<List<LowonganItem>>
 
-    @GET("/lowongan/{id}")
+    @GET("api/jobs/{id}")
     suspend fun getDetailLowongan(
         @Path("id") lowonganId: String
     ): Response<LowonganDetail>
 
     @Multipart
-    @POST("jobs/{id}/apply")
+    @POST("api/jobs/{id}/apply")
     suspend fun ajukanLowongan(
         @Header("Authorization") token: String,
         @Path("id") lowonganId: String,
@@ -61,11 +73,10 @@ interface ApiService {
         // 1. CV (Wajib)
         @Part cv: MultipartBody.Part,
 
-        // 2. Surat Rekomendasi (WAJIB - Tidak boleh null/tanda tanya)
+        // 2. Surat Rekomendasi (WAJIB)
         @Part recommendation_letter: MultipartBody.Part,
 
-        // 3. Portofolio (Opsional - Boleh null)
-        // Perhatikan namanya 'portfolio' sesuai backend, bukan 'portfolio_url' lagi
+        // 3. Portofolio (Opsional)
         @Part portfolio: MultipartBody.Part?,
 
         // 4. Data Diri (Teks)
@@ -78,10 +89,22 @@ interface ApiService {
         @Part("about_me") aboutMe: RequestBody
     ): Response<GeneralResponse>
 
-    @GET("/notifikasi")
+    // 4. Riwayat Lamaran
+    @GET("api/jobs/history/my-applications")
+    suspend fun getRiwayatLamaran(
+        @Header("Authorization") token: String
+    ): Response<List<RiwayatItem>>
+
+    @GET("api/jobs/history/detail/{id}")
+    suspend fun getDetailLamaran(
+        @Header("Authorization") token: String,
+        @Path("id") applicationId: String
+    ): Response<ApplicationDetail>
+
+    @GET("notifikasi")
     suspend fun getNotifikasi(): Response<List<NotifikasiItem>>
 
-    @DELETE("/notifikasi/{id}")
+    @DELETE("notifikasi/{id}")
     suspend fun hapusNotifikasi(
         @Path("id") notifikasiId: String
     ): Response<GeneralResponse>
@@ -89,48 +112,30 @@ interface ApiService {
 
     // --- MODUL KURSUS ---
 
-    /**
-     * 1. Dapetin data dashboard kursus
-     */
     @GET("/kursus/dashboard")
     suspend fun getKursusDashboard(): Response<KursusDashboardData>
 
-    /**
-     * 2. Dapetin list kursus (buat search)
-     */
     @GET("/kursus")
     suspend fun getSemuaKursus(
         @Query("search") query: String?
     ): Response<List<KursusItem>>
 
-    /**
-     * 3. Dapetin detail satu kursus
-     */
     @GET("/kursus/{id}")
     suspend fun getDetailKursus(
         @Path("id") kursusId: String
     ): Response<KursusDetail>
 
-    /**
-     * 4. Daftar ke kursus
-     */
     @POST("/kursus/{id}/daftar")
     suspend fun daftarKursus(
         @Path("id") kursusId: String
     ): Response<GeneralResponse>
 
-    /**
-     * 5. Upload badge (sertifikat) via file
-     */
     @Multipart
     @POST("/kursus/badge/upload")
     suspend fun uploadBadge(
         @Part file: MultipartBody.Part
     ): Response<GeneralResponse>
 
-    /**
-     * 6. Upload badge (sertifikat) via scan QR
-     */
     @POST("/kursus/badge/scan")
     suspend fun scanBadge(
         @Body qrData: Map<String, String>
