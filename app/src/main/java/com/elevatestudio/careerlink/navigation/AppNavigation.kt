@@ -1,7 +1,8 @@
-// Lokasi: navigation/AppNavigation.kt
 package com.elevatestudio.careerlink.navigation
 
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -10,64 +11,70 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elevatestudio.careerlink.ui.screen.OnboardingScreen
 import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignInScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignUpScreen
-// --- IMPORT MODUL CAREER FAIR (DARI TEMANMU) ---
+
 import com.elevatestudio.careerlink.ui.screen.careerfair.BoothDetailScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.CareerFairScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.CheckInScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.EventDetailScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.BoothMapScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.EventMapScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.NetworkingScreen
 import com.elevatestudio.careerlink.ui.screen.careerfair.NotificationScreen
-// --- IMPORT MODUL LOWONGAN ---
+import com.elevatestudio.careerlink.ui.screen.careerfair.SavedEventsScreen
+import com.elevatestudio.careerlink.ui.screen.careerfair.CareerFairViewModel
+
+
 import com.elevatestudio.careerlink.ui.screen.lowongan.AjukanLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.NotifikasiScreen
-// --- IMPORT MODUL MENTORING ---
+
 import com.elevatestudio.careerlink.ui.screen.mentoring.BookingMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.CatatanMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.DetailMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.JadwalMentoringScreen
-// --- IMPORT MODUL KURSUS (DARI KITA) ---
+
 import com.elevatestudio.careerlink.ui.screen.kursus.BadgeScanScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DashboardKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DetailKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.RegistrationSuccessScreen
 
-// Definisikan rute-rute layarnya biar gak salah ketik
+
 object Routes {
-    // --- GRUP AUTH ---
+
     const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
     const val SIGN_IN = "signin"
     const val SIGN_UP = "signup"
     const val FORGOT_PASSWORD = "forgot_password"
 
-    // --- GRUP CAREER FAIR (DARI TEMANMU) ---
-    // Ini akan jadi "HOME" kita
+
     const val CAREER_FAIR = "career_fair"
     const val EVENT_DETAIL = "eventDetail/{eventTitle}"
+    const val BOOTH_MAP = "boothMap"
     const val EVENT_MAP = "eventMap"
     const val BOOTH_DETAIL = "boothDetail/{boothId}"
     const val CHECK_IN = "checkIn"
     const val NETWORKING = "networking"
-    const val NOTIFICATION = "notification" // Notif Career Fair
+    const val SAVED_EVENTS = "savedEvents"
+    const val NOTIFICATION = "notification"
 
-    // --- GRUP LOWONGAN ---
+
     const val DAFTAR_LOWONGAN = "daftar_lowongan"
-    const val NOTIFIKASI_LOWONGAN = "notifikasi_lowongan" // Ganti nama agar tidak konflik
+    const val NOTIFIKASI_LOWONGAN = "notifikasi_lowongan"
     const val DETAIL_LOWONGAN = "detail_lowongan/{lowonganId}"
     const val AJUKAN_LOWONGAN = "ajukan_lowongan/{lowonganId}"
     fun detailLowongan(lowonganId: String) = "detail_lowongan/$lowonganId"
     fun ajukanLowongan(lowonganId: String) = "ajukan_lowongan/$lowonganId"
 
-    // --- GRUP KURSUS (DARI KITA) ---
+
     const val KURSUS_DASHBOARD = "kursus_dashboard"
     const val DAFTAR_KURSUS = "daftar_kursus"
     const val REGISTRATION_SUCCESS = "registration_success"
@@ -75,38 +82,41 @@ object Routes {
     const val DETAIL_KURSUS = "detail_kursus/{kursusId}"
     fun detailKursus(kursusId: String) = "detail_kursus/$kursusId"
 
-    // --- GRUP MENTORING ---
+
     const val JADWAL_MENTORING = "jadwal_mentoring"
     const val DETAIL_MENTORING = "detail_mentoring/{sessionId}"
     const val BOOKING_MENTORING = "booking_mentoring/{sessionId}"
     const val CATATAN_MENTORING = "catatan_mentoring/{sessionId}"
 }
 
-@OptIn(ExperimentalAnimationApi::class) // <-- Aktifkan Animasi
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // --- FUNGSI ANIMASI ---
+    val careerFairViewModel: CareerFairViewModel = viewModel()
+
+
     val slideIn = slideInHorizontally(animationSpec = tween(300), initialOffsetX = { it })
     val slideOut = slideOutHorizontally(animationSpec = tween(300), targetOffsetX = { -it })
     val popIn = slideInHorizontally(animationSpec = tween(300), initialOffsetX = { -it })
     val popOut = slideOutHorizontally(animationSpec = tween(300), targetOffsetX = { it })
     val fadeIn = fadeIn(animationSpec = tween(300))
     val fadeOut = fadeOut(animationSpec = tween(300))
-    // --- SELESAI FUNGSI ANIMASI ---
+
 
     NavHost(
         navController = navController,
-        startDestination = Routes.DAFTAR_KURSUS, // <-- Dikembalikan ke SPLASH
-        // Terapkan animasi default ke SEMUA layar
+        startDestination = Routes.DAFTAR_KURSUS,
+
         enterTransition = { slideIn },
         exitTransition = { slideOut },
         popEnterTransition = { popIn },
         popExitTransition = { popOut }
     ) {
 
-        // --- GRUP OTENTIKASI ---
+
         composable(
             Routes.SPLASH,
             enterTransition = { fadeIn },
@@ -141,7 +151,7 @@ fun AppNavigation() {
                 onNavigateToSignUp = { navController.navigate(Routes.SIGN_UP) },
                 onNavigateToForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) },
                 onSignInClicked = { email, password ->
-                    // Login sukses, lempar ke "HOME" (Career Fair)
+
                     navController.navigate(Routes.JADWAL_MENTORING) {
                         popUpTo(Routes.SIGN_IN) { inclusive = true }
                     }
@@ -172,40 +182,94 @@ fun AppNavigation() {
             )
         }
 
-        // --- GRUP CAREER FAIR (DARI TEMANMU) ---
+
         composable(Routes.CAREER_FAIR) {
-            // TODO: Update CareerFairScreen punya temanmu
-            // 1. Tambah parameter onNavigate: (String) -> Unit
-            // 2. Pasang AppBottomNavBar di Scaffold-nya
-            // 3. Panggil onNavigate(route) di bottom bar
             CareerFairScreen(navController)
         }
 
         composable(
             route = Routes.EVENT_DETAIL,
-            arguments = listOf(navArgument("eventTitle") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("eventTitle") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
-            val encodedTitle = backStackEntry.arguments?.getString("eventTitle") ?: ""
-            val decodedTitle = Uri.decode(encodedTitle)
-            EventDetailScreen(navController, decodedTitle)
+
+            val title = Uri.decode(
+                backStackEntry.arguments?.getString("eventTitle") ?: ""
+            )
+
+            EventDetailScreen(
+                navController = navController,
+                eventTitle = title,
+                viewModel = careerFairViewModel
+            )
         }
 
-        composable(Routes.EVENT_MAP) { EventMapScreen(navController) }
+        composable(Routes.EVENT_MAP) {
+            EventMapScreen(navController)
+        }
+
+        composable(
+            route = Routes.BOOTH_MAP,
+            arguments = listOf(
+                navArgument("mode") {
+                    type = NavType.StringType
+                    defaultValue = "booth"
+                },
+                navArgument("boothId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) { backStackEntry ->
+
+            val mode = backStackEntry.arguments?.getString("mode")
+            val boothId = backStackEntry.arguments?.getInt("boothId")
+
+            BoothMapScreen(
+                navController = navController,
+                mode = mode,
+                boothId = boothId
+            )
+        }
 
         composable(
             route = Routes.BOOTH_DETAIL,
-            arguments = listOf(navArgument("boothId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("boothId") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
-            val boothId = backStackEntry.arguments?.getString("boothId")?.toIntOrNull() ?: 0
+            val boothId = backStackEntry.arguments
+                ?.getString("boothId")
+                ?.toIntOrNull() ?: 0
+
             BoothDetailScreen(navController, boothId)
         }
 
-        composable(Routes.CHECK_IN) { CheckInScreen(navController) }
-        composable(Routes.NETWORKING) { NetworkingScreen(navController) }
-        composable(Routes.NOTIFICATION) { NotificationScreen(navController) }
+        composable(Routes.CHECK_IN) {
+            CheckInScreen(
+                navController = navController,
+                viewModel = careerFairViewModel
+            )
+        }
+
+        composable(Routes.NETWORKING) {
+            NetworkingScreen(navController)
+        }
+
+        composable(Routes.NOTIFICATION) {
+            NotificationScreen(navController)
+        }
+
+        composable(Routes.SAVED_EVENTS) {
+            SavedEventsScreen(
+                navController = navController,
+                viewModel = careerFairViewModel
+            )
+        }
 
 
-        // --- GRUP MODUL LOWONGAN (GABUNGAN) ---
+
         composable(Routes.DAFTAR_LOWONGAN) {
             DaftarLowonganScreen(
                 onLowonganClick = { lowonganId ->
@@ -213,7 +277,7 @@ fun AppNavigation() {
                 },
                 onNavigate = { route ->
                     when (route) {
-                        "home" -> navController.navigate(Routes.CAREER_FAIR) {
+                        "event" -> navController.navigate(Routes.CAREER_FAIR) {
                             popUpTo(Routes.DAFTAR_LOWONGAN) { inclusive = true }
                         }
                         "kursus" -> navController.navigate(Routes.KURSUS_DASHBOARD) {
@@ -256,7 +320,7 @@ fun AppNavigation() {
             )
         }
 
-        composable(Routes.NOTIFIKASI_LOWONGAN) { // Pakai nama baru
+        composable(Routes.NOTIFIKASI_LOWONGAN) {
             NotifikasiScreen(
                 onBackClick = { navController.popBackStack() },
                 onLihatClick = { notifId ->
@@ -265,7 +329,7 @@ fun AppNavigation() {
             )
         }
 
-        // --- GRUP MODUL KURSUS (DARI KITA) ---
+
         composable(Routes.KURSUS_DASHBOARD) {
             DashboardKursusScreen(
                 onNavigate = { route ->
@@ -318,7 +382,7 @@ fun AppNavigation() {
 
         composable(
             Routes.REGISTRATION_SUCCESS,
-            enterTransition = { fadeIn(tween(500)) } // Transisi khusus
+            enterTransition = { fadeIn(tween(500)) }
         ) {
             RegistrationSuccessScreen(
                 onKembaliClick = {
@@ -335,12 +399,12 @@ fun AppNavigation() {
             )
         }
 
-        // 🔹 1. Daftar Jadwal
+
         composable(Routes.JADWAL_MENTORING) {
             JadwalMentoringScreen(navController)
         }
 
-        // 🔹 2. Detail Mentoring
+
         composable(
             route = Routes.DETAIL_MENTORING,
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
@@ -349,14 +413,14 @@ fun AppNavigation() {
             DetailMentoringScreen(navController, sessionId)
         }
 
-        // 🔹 3. Booking Mentoring
+
         composable(
             route = Routes.BOOKING_MENTORING,
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
         ) {
             BookingMentoringScreen(navController)}
 
-        // 🔹 4. Catatan Mentoring
+
         composable(Routes.CATATAN_MENTORING) {
             CatatanMentoringScreen(navController)
             }
