@@ -34,7 +34,6 @@ fun NotifikasiScreen(
     var listNotif by remember { mutableStateOf<List<NotifikasiItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fungsi Load Notifikasi
     fun loadNotifikasi() {
         scope.launch {
             try {
@@ -52,7 +51,6 @@ fun NotifikasiScreen(
         }
     }
 
-    // Fungsi Hapus Notifikasi
     fun hapusNotifikasi(id: String) {
         scope.launch {
             try {
@@ -143,7 +141,6 @@ fun NotifikasiScreen(
                                 )
                             }
 
-                            // Tombol Hapus
                             IconButton(onClick = { hapusNotifikasi(item.id.toString()) }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Red)
                             }

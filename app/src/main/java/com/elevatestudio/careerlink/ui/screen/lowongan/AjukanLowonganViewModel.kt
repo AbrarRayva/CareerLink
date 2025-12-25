@@ -1,4 +1,3 @@
-// Lokasi: ui/screen/lowongan/AjukanLowonganViewModel.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import android.content.Context
@@ -46,7 +45,7 @@ data class AjukanLamaranState(
 
     val isFormValid: Boolean
         get() = namaLengkap.isNotBlank() &&
-                tanggalLahir.isNotBlank() && tanggalLahirError == null && // Harus Valid
+                tanggalLahir.isNotBlank() && tanggalLahirError == null &&
                 jenisKelamin.isNotBlank() &&
                 pendidikan.isNotBlank() &&
                 programStudi.isNotBlank() &&
@@ -81,14 +80,6 @@ class AjukanLowonganViewModel : ViewModel() {
     private val _submissionState = MutableStateFlow<SubmissionState>(SubmissionState.Idle)
     val submissionState: StateFlow<SubmissionState> = _submissionState.asStateFlow()
 
-    // --- REGEX STRICT (TGL LAHIR) ---
-    // Penjelasan:
-    // (0[1-9]|[12][0-9]|3[01]) -> Tanggal 01-31
-    // / -> Wajib ada garis miring
-    // (0[1-9]|1[012]) -> Bulan 01-12
-    // / -> Wajib ada garis miring
-    // \d{4} -> Tahun 4 digit (misal 2005)
-    // ^ dan $ -> Pastikan dari awal sampai akhir formatnya begitu
     private val dateRegex = Regex("""^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$""")
 
     // Regex HP (Tetap sama)
@@ -98,26 +89,19 @@ class AjukanLowonganViewModel : ViewModel() {
         when (event) {
             is LamaranFormEvent.NamaChanged -> _lamaranState.update { it.copy(namaLengkap = event.value) }
 
-            // --- VALIDASI TANGGAL LAHIR MANUAL ---
             is LamaranFormEvent.TanggalLahirChanged -> {
                 val input = event.value
-
-                // Cek Error: Jika input tidak sesuai pola Regex
                 val error = if (input.isNotEmpty() && !input.matches(dateRegex)) {
                     "Wajib format DD/MM/YYYY (Contoh: 20/03/2005)"
                 } else null
 
-                // Simpan apa adanya ketikan user
                 _lamaranState.update { it.copy(tanggalLahir = input, tanggalLahirError = error) }
             }
 
             is LamaranFormEvent.JenisKelaminChanged -> _lamaranState.update { it.copy(jenisKelamin = event.value) }
             is LamaranFormEvent.PendidikanChanged -> _lamaranState.update { it.copy(pendidikan = event.value) }
             is LamaranFormEvent.ProgramStudiChanged -> _lamaranState.update { it.copy(programStudi = event.value) }
-
-            // --- VALIDASI NO HP ---
             is LamaranFormEvent.NomorAktifChanged -> {
-                // Biarkan user ngetik manual juga, tapi kita ingatkan kalau salah
                 val input = event.value
                 val error = if (input.isNotEmpty() && !input.matches(phoneRegex)) {
                     "Wajib diawali +628... (Contoh: +62812345678)"
@@ -135,7 +119,7 @@ class AjukanLowonganViewModel : ViewModel() {
             LamaranFormEvent.ClearPortofolio -> _lamaranState.update { it.copy(portofolioUri = null) }
             LamaranFormEvent.ClearSuratRekomendasi -> _lamaranState.update { it.copy(suratRekomendasiUri = null) }
 
-            LamaranFormEvent.Submit -> { /* No-op */ }
+            LamaranFormEvent.Submit -> {}
         }
     }
 
@@ -181,10 +165,6 @@ class AjukanLowonganViewModel : ViewModel() {
                     fun createPart(value: String): okhttp3.RequestBody {
                         return value.toRequestBody("text/plain".toMediaTypeOrNull())
                     }
-
-                    // KONVERSI TANGGAL SEBELUM KIRIM KE DATABASE (YYYY-MM-DD)
-                    // Input User: 20/03/2005
-                    // Output ke API: 2005-03-20 (Agar MySQL tidak error)
                     val rawDate = currentState.tanggalLahir
                     val dateParts = rawDate.split("/")
                     val apiDate = if (dateParts.size == 3) {

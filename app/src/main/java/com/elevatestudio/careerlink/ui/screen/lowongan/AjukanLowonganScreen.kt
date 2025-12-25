@@ -1,4 +1,3 @@
-// Lokasi: ui/screen/lowongan/AjukanLowonganScreen.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import android.content.Context
@@ -162,7 +161,6 @@ fun AjukanLowonganScreen(
                         OutlinedTextField(
                             value = state.tanggalLahir,
                             onValueChange = {
-                                // Biarkan user ngetik apapun (angka & simbol)
                                 viewModel.onLamaranEvent(LamaranFormEvent.TanggalLahirChanged(it))
                             },
                             label = { Text("Tanggal Lahir") },
@@ -220,7 +218,6 @@ fun AjukanLowonganScreen(
                                     Text(state.nomorAktifError!!, color = MaterialTheme.colorScheme.error)
                                 }
                             },
-                            // KEYBOARD PHONE
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
 

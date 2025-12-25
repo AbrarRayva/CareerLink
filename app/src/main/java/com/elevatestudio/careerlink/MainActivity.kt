@@ -20,8 +20,6 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 1. Panggil Fungsi Setup FCM di sini (Saat aplikasi baru dibuka)
         setupFcmToken()
         val notificationJobId = intent.getStringExtra("jobId")
 
@@ -36,8 +34,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    // Fungsi khusus untuk mengambil Token dan kirim ke Backend
     private fun setupFcmToken() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
@@ -45,25 +41,19 @@ class MainActivity : ComponentActivity() {
                 return@addOnCompleteListener
             }
 
-            // 1. Ambil Token Baru
             val token = task.result
             Log.d("FCM", "Token HP ini: $token")
-
-            // 2. Kirim ke Backend (Hanya jika user sedang Login)
             sendTokenToBackend(token)
         }
     }
 
     private fun sendTokenToBackend(fcmToken: String) {
-        // Gunakan lifecycleScope agar berjalan di background thread
         lifecycleScope.launch {
             try {
                 val userPreferences = UserPreferences(applicationContext)
-                // Cek apakah ada token login (User sudah login?)
                 val authToken = userPreferences.authToken.first()
 
                 if (!authToken.isNullOrEmpty()) {
-                    // Panggil API update token
                     RetrofitClient.instance.updateFcmToken(
                         token = "Bearer $authToken",
                         data = mapOf("fcm_token" to fcmToken)

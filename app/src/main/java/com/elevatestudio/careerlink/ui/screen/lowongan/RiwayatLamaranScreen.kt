@@ -48,7 +48,7 @@ fun RiwayatLamaranScreen(
                         listRiwayat = response.body() ?: emptyList()
                     }
                 } catch (e: Exception) {
-                    // Handle Error
+
                 }
             }
             isLoading = false
@@ -93,7 +93,6 @@ fun RiwayatLamaranScreen(
                             Text(item.companyName, color = Color.Gray, fontSize = 14.sp)
                             Spacer(Modifier.height(8.dp))
 
-                            // Status Badge
                             Surface(
                                 color = if (item.status == "Pending") Color(0xFFFFF3E0) else Color(0xFFE8F5E9),
                                 shape = RoundedCornerShape(4.dp)

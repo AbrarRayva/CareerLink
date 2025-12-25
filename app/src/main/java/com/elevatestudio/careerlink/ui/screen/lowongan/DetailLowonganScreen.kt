@@ -3,8 +3,7 @@ package com.elevatestudio.careerlink.ui.screen.lowongan
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape // Tambah ini
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,32 +22,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel // Import viewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.LowonganDetail
+import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.ui.components.PrimaryButton
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
-import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganViewModel
-import com.elevatestudio.careerlink.ui.screen.lowongan.HomeUiState
-
-// URL Gambar (Sesuaikan IP Laptop kamu)
-private const val BASE_IMAGE_URL = "http://192.168.100.32:3000/"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailLowonganScreen(
     lowonganId: String,
-    onDaftarClick: (String) -> Unit, // Nanti arahkan ke Form Pengajuan
+    onDaftarClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
-    // 1. Panggil ViewModel
     val viewModel: DaftarLowonganViewModel = viewModel()
     val uiState by viewModel.detailUiState.collectAsState()
 
-    // 2. Ambil data saat pertama kali dibuka
     LaunchedEffect(lowonganId) {
         viewModel.getDetailLowongan(lowonganId)
     }
@@ -60,14 +53,13 @@ fun DetailLowonganScreen(
                 title = { Text("Detail Lowongan", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryGreen)
             )
         },
         bottomBar = {
-            // Tampilkan tombol DAFTAR hanya jika data berhasil dimuat
             if (uiState is DetailUiState.Success) {
                 val detail = (uiState as DetailUiState.Success).data
                 PrimaryButton(
@@ -79,8 +71,6 @@ fun DetailLowonganScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-
-            // 3. Handle Status (Loading / Success / Error)
             when (uiState) {
                 is DetailUiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -105,9 +95,8 @@ fun DetailLowonganScreen(
 
 @Composable
 fun DetailContent(detail: LowonganDetail) {
-    // Logic URL Gambar
     val fullLogoUrl = if (detail.logoUrl != null && !detail.logoUrl.startsWith("http")) {
-        "$BASE_IMAGE_URL${detail.logoUrl}"
+        "${ApiClient.BASE_URL}${detail.logoUrl}"
     } else {
         detail.logoUrl
     }
@@ -115,7 +104,6 @@ fun DetailContent(detail: LowonganDetail) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        // HEADER (Logo, Judul, PT)
         item {
             Column(
                 modifier = Modifier
@@ -143,7 +131,7 @@ fun DetailContent(detail: LowonganDetail) {
                     text = detail.title,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = TextBlack // Pastikan TextBlack diimport atau ganti Color.Black
+                    color = TextBlack
                 )
                 Text(
                     text = detail.companyName,
@@ -153,7 +141,6 @@ fun DetailContent(detail: LowonganDetail) {
             }
         }
 
-        // INFO (Lokasi, Gaji, dll)
         item {
             Column(modifier = Modifier.padding(16.dp)) {
                 InfoRow(Icons.Default.LocationOn, detail.location)
@@ -163,7 +150,6 @@ fun DetailContent(detail: LowonganDetail) {
             Divider()
         }
 
-        // DESKRIPSI
         item {
             SectionTitle(title = "Deskripsi Pekerjaan")
             Text(
@@ -174,7 +160,6 @@ fun DetailContent(detail: LowonganDetail) {
             )
         }
 
-        // REQUIREMENTS
         item {
             Spacer(modifier = Modifier.height(16.dp))
             SectionTitle(title = "Persyaratan")
@@ -184,7 +169,7 @@ fun DetailContent(detail: LowonganDetail) {
                 lineHeight = 24.sp,
                 color = Color.DarkGray
             )
-            Spacer(modifier = Modifier.height(100.dp)) // Jarak bawah biar gak ketutup tombol
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }

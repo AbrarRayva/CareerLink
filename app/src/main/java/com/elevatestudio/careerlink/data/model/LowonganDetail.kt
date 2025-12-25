@@ -19,8 +19,6 @@ data class LowonganDetail(
 
     @SerializedName("salary_range")
     val salaryRange: String,
-
-    // Tambahan detail yang tidak ada di list biasa
     val description: String?,
     val requirements: String?,
 

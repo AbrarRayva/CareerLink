@@ -1,4 +1,3 @@
-// Lokasi: navigation/AppNavigation.kt
 package com.elevatestudio.careerlink.navigation
 
 import android.net.Uri
@@ -43,7 +42,6 @@ import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLamaranScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.RiwayatLamaranScreen
 
 object Routes {
-    // ... (Constants Route sama seperti kodemu, tidak perlu diubah) ...
     const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
     const val SIGN_IN = "signin"
@@ -99,23 +97,16 @@ fun AppNavigation(startJobId: String? = null) {
         popExitTransition = { popOut }
     ) {
 
-        // --- AUTH ---
         composable(Routes.SPLASH, enterTransition = { fadeIn }, exitTransition = { fadeOut }) {
             SplashScreen(onSplashFinished = {
                 if (startJobId != null) {
-                    // SKENARIO DEEP LINK (Klik Notif)
-
-                    // A. Masuk ke Home dulu (PENTING: Supaya kalau user tekan Back, dia lari ke Home, bukan keluar app)
                     navController.navigate(Routes.DAFTAR_LOWONGAN) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
 
-                    // B. Lalu langsung tumpuk dengan halaman Detail Lowongan
                     navController.navigate(Routes.detailLowongan(startJobId))
 
                 } else {
-                    // SKENARIO NORMAL (Buka App biasa)
-                    // (Logika lama kamu tetap aman di sini)
                     navController.navigate(Routes.ONBOARDING) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
@@ -150,7 +141,6 @@ fun AppNavigation(startJobId: String? = null) {
             ForgotPasswordScreen(onSavePasswordClicked = { _, _, _ -> navController.navigate(Routes.SIGN_IN) })
         }
 
-        // --- CAREER FAIR ---
         composable(Routes.CAREER_FAIR) { CareerFairScreen(navController) }
         composable(route = Routes.EVENT_DETAIL, arguments = listOf(navArgument("eventTitle") { type = NavType.StringType })) { bse ->
             val decodedTitle = Uri.decode(bse.arguments?.getString("eventTitle") ?: "")
@@ -166,7 +156,6 @@ fun AppNavigation(startJobId: String? = null) {
         composable(Routes.NOTIFICATION) { NotificationScreen(navController) }
 
 
-        // --- LOWONGAN ---
         composable(Routes.DAFTAR_LOWONGAN) {
             DaftarLowonganScreen(
                 onLowonganClick = { lowonganId ->
@@ -233,13 +222,11 @@ fun AppNavigation(startJobId: String? = null) {
             NotifikasiScreen(
                 onBackClick = { navController.popBackStack() },
                 onItemClick = { jobId ->
-                    // Arahkan ke Detail Lowongan saat item list diklik
                     navController.navigate(Routes.detailLowongan(jobId))
                 }
             )
         }
 
-        // --- KURSUS ---
         composable(Routes.KURSUS_DASHBOARD) {
             DashboardKursusScreen(
                 onNavigate = { route ->
@@ -281,7 +268,6 @@ fun AppNavigation(startJobId: String? = null) {
             BadgeScanScreen(onBackClick = { navController.popBackStack() })
         }
 
-        // --- MENTORING ---
         composable(Routes.JADWAL_MENTORING) {
             JadwalMentoringScreen(navController)
         }

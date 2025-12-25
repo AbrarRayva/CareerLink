@@ -1,4 +1,3 @@
-// Lokasi: ui/screen/lowongan/DaftarLowonganViewModel.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import androidx.compose.runtime.getValue
@@ -15,14 +14,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// State untuk UI List Lowongan
 sealed interface HomeUiState {
     object Loading : HomeUiState
     data class Success(val jobs: List<LowonganItem>) : HomeUiState
     data class Error(val message: String) : HomeUiState
 }
 
-// State untuk Detail Lowongan
 sealed interface DetailUiState {
     object Idle : DetailUiState
     object Loading : DetailUiState
@@ -32,7 +29,6 @@ sealed interface DetailUiState {
 
 class DaftarLowonganViewModel : ViewModel() {
 
-    // 1. State List & Filter
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -45,23 +41,16 @@ class DaftarLowonganViewModel : ViewModel() {
     val detailUiState: StateFlow<DetailUiState> = _detailUiState.asStateFlow()
 
     init {
-        getJobs() // Ambil data awal
+        getJobs()
     }
-
-    // --- FUNGSI AMBIL LIST (Support Search & Filter) ---
     fun getJobs(filterType: String? = null, searchQuery: String? = null, token: String? = null) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
-
-            // 1. UPDATE STATE FILTER (PENTING BUAT HIGHLIGHT UI)
             if (searchQuery.isNullOrEmpty()) {
                 currentFilter = filterType
             }
 
             try {
-                // Logika Token: Kalau ada token, kirim ke header "Authorization: Bearer ..."
-                // Tapi karena Retrofit kita set up nya beda-beda, kita akali sedikit:
-                // Kita harus ubah ApiService getLowongan biar terima Header token (Optional)
 
                 val response = RetrofitClient.instance.getLowongan(
                     search = searchQuery,
@@ -80,7 +69,6 @@ class DaftarLowonganViewModel : ViewModel() {
         }
     }
 
-    // --- FUNGSI AMBIL DETAIL ---
     fun getDetailLowongan(id: String) {
         viewModelScope.launch {
             _detailUiState.value = DetailUiState.Loading

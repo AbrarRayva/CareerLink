@@ -23,15 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.ApplicationDetail
-import com.elevatestudio.careerlink.data.remote.RetrofitClient
+import com.elevatestudio.careerlink.data.remote.ApiClient // Import ini
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.utils.UserPreferences
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-// Ganti IP sesuai laptopmu
-private const val BASE_URL = "http://192.168.100.32:3000/"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,11 +41,10 @@ fun DetailLamaranScreen(
     var data by remember { mutableStateOf<ApplicationDetail?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fungsi buka PDF di Browser
     fun openFile(urlPart: String) {
-        // Hapus "uploads/" atau backslash kalau ada double
         val cleanUrl = urlPart.replace("\\", "/")
-        val fullUrl = "$BASE_URL$cleanUrl"
+        val fullUrl = "${ApiClient.BASE_URL}$cleanUrl"
+
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(fullUrl))
         context.startActivity(intent)
     }
@@ -58,12 +54,11 @@ fun DetailLamaranScreen(
             val token = UserPreferences(context).authToken.first()
             if (token != null) {
                 try {
-                    val response = RetrofitClient.instance.getDetailLamaran("Bearer $token", applicationId)
+                    val response = ApiClient.instance.getDetailLamaran("Bearer $token", applicationId)
                     if (response.isSuccessful) {
                         data = response.body()
                     }
                 } catch (e: Exception) {
-                    // Handle Error
                 }
             }
             isLoading = false
@@ -100,7 +95,6 @@ fun DetailLamaranScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                // 1. STATUS CARD
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     modifier = Modifier.fillMaxWidth()
@@ -108,7 +102,7 @@ fun DetailLamaranScreen(
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
-                                model = if (item.logoUrl?.startsWith("http") == true) item.logoUrl else "$BASE_URL${item.logoUrl}",
+                                model = if (item.logoUrl?.startsWith("http") == true) item.logoUrl else "${ApiClient.BASE_URL}${item.logoUrl}",
                                 contentDescription = null,
                                 modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp))
                             )
@@ -138,13 +132,11 @@ fun DetailLamaranScreen(
                 }
 
                 Spacer(Modifier.height(16.dp))
-
-                // 2. DATA DIRI PELAMAR (Read Only)
                 Text("Data Pelamar", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.padding(16.dp)) {
                         DetailRow(Icons.Default.Person, "Nama", item.fullName)
-                        DetailRow(Icons.Default.CalendarToday, "Tgl Lahir", item.dob) // Format Date kalau perlu
+                        DetailRow(Icons.Default.CalendarToday, "Tgl Lahir", item.dob)
                         DetailRow(Icons.Default.Transgender, "Gender", item.gender)
                         DetailRow(Icons.Default.School, "Pendidikan", "${item.education} - ${item.major}")
                         DetailRow(Icons.Default.Phone, "No HP", item.phoneNumber)
@@ -156,8 +148,6 @@ fun DetailLamaranScreen(
                 }
 
                 Spacer(Modifier.height(16.dp))
-
-                // 3. DOKUMEN (Tombol Download)
                 Text("Dokumen", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
 
                 Button(

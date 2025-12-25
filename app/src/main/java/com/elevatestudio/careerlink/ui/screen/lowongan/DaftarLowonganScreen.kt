@@ -1,4 +1,3 @@
-// Lokasi: ui/screen/lowongan/DaftarLowonganScreen.kt
 package com.elevatestudio.careerlink.ui.screen.lowongan
 
 import androidx.compose.foundation.BorderStroke
@@ -17,14 +16,12 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,11 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
-import com.elevatestudio.careerlink.utils.UserPreferences
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,18 +40,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.LowonganItem
+import com.elevatestudio.careerlink.data.remote.ApiClient
+import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
-import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
-
-// IP Tetap Sesuai Request
-private const val BASE_IMAGE_URL = "http://192.168.100.32:3000/"
+import com.elevatestudio.careerlink.utils.UserPreferences
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DaftarLowonganScreen(
     onLowonganClick: (String) -> Unit,
-    onNavigate: (String) -> Unit // Fungsi navigasi dari AppNavigation
+    onNavigate: (String) -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: DaftarLowonganViewModel = viewModel()
@@ -69,7 +64,6 @@ fun DaftarLowonganScreen(
     val scope = rememberCoroutineScope()
     var userToken by remember { mutableStateOf<String?>(null) }
 
-    // Load Token & Data Awal
     LaunchedEffect(Unit) {
         scope.launch {
             val prefs = UserPreferences(context)
@@ -80,12 +74,10 @@ fun DaftarLowonganScreen(
 
     Scaffold(
         containerColor = AppBackground,
-        // 1. TOP BAR (Untuk Judul & Tombol Riwayat)
         topBar = {
             TopAppBar(
                 title = { Text("CareerLink Jobs", fontWeight = FontWeight.Bold, color = Color.White) },
                 actions = {
-                    // 1. TOMBOL NOTIFIKASI (BARU)
                     IconButton(onClick = { onNavigate("notifikasi") }) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
@@ -93,8 +85,6 @@ fun DaftarLowonganScreen(
                             tint = Color.White
                         )
                     }
-
-                    // Tombol Menuju Riwayat Lamaran
                     IconButton(onClick = { onNavigate("riwayat_lamaran") }) {
                         Icon(Icons.Default.History, contentDescription = "Riwayat", tint = Color.White)
                     }
@@ -102,12 +92,10 @@ fun DaftarLowonganScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryGreen)
             )
         },
-        // 2. BOTTOM NAVBAR (Yang Tadi Hilang)
         bottomBar = {
             AppBottomNavBar(
-                currentRoute = "lowongan", // Ini menandakan tab "Lowongan" lagi aktif
+                currentRoute = "lowongan",
                 onItemSelected = { route ->
-                    // Kalau user klik tombol lain, panggil fungsi onNavigate
                     if (route != "lowongan") {
                         onNavigate(route)
                     }
@@ -121,7 +109,6 @@ fun DaftarLowonganScreen(
                 .padding(paddingValues)
                 .padding(top = 16.dp)
         ) {
-            // --- SEARCH BAR ---
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -150,7 +137,6 @@ fun DaftarLowonganScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- FILTER CHIPS ---
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp)
             ) {
@@ -173,7 +159,6 @@ fun DaftarLowonganScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- LIST LOWONGAN ---
             Box(modifier = Modifier.fillMaxSize()) {
                 when (uiState) {
                     is HomeUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = PrimaryGreen)
@@ -205,7 +190,6 @@ fun DaftarLowonganScreen(
     }
 }
 
-// --- KOMPONEN PENDUKUNG (Chip & Card) ---
 @Composable
 fun FilterChipItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
@@ -223,7 +207,8 @@ fun FilterChipItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun LowonganCard(item: LowonganItem, onClick: () -> Unit) {
-    val fullLogoUrl = if (item.logoUrl != null && !item.logoUrl.startsWith("http")) "$BASE_IMAGE_URL${item.logoUrl}" else item.logoUrl
+    val fullLogoUrl = if (item.logoUrl != null && !item.logoUrl.startsWith("http")) "${ApiClient.BASE_URL}${item.logoUrl}" else item.logoUrl
+
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
