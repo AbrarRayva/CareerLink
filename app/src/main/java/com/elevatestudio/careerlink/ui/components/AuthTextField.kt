@@ -37,8 +37,8 @@ fun AuthTextField(
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        // SAYA HAPUS BAGIAN COLORS DULU AGAR TIDAK ERROR
-        // Biarkan pakai warna default Android dulu
+       
+       
 
         visualTransformation = if (isPassword && !isPasswordVisible.value) {
             PasswordVisualTransformation()

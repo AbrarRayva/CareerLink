@@ -13,18 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import com.elevatestudio.careerlink.data.model.KursusDetail
-import com.elevatestudio.careerlink.data.remote.ApiClient
+import com.elevatestudio.careerlink.data.model.Course
 import com.elevatestudio.careerlink.ui.components.ConfirmationDialog
-import com.elevatestudio.careerlink.ui.components.PrimaryButton
-import com.elevatestudio.careerlink.ui.screen.lowongan.SubmissionState
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
@@ -41,201 +36,98 @@ fun DetailKursusScreen(
     onDaftarSuccess: () -> Unit
 ) {
     val context = LocalContext.current
-    val detailState by viewModel.detailState.collectAsState()
+    val uiState by viewModel.detailUiState.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    var showDaftarDialog by remember { mutableStateOf(false) }
-    var userToken by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) {
-        scope.launch {
-            val prefs = UserPreferences(context)
-            userToken = prefs.authToken.first() ?: ""
-        }
-    }
+    var showDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(kursusId) {
-        viewModel.getDetailKursus(kursusId)
+        val idInt = kursusId.toIntOrNull() ?: 0
+        viewModel.getDetailKursus(idInt)
     }
 
     LaunchedEffect(submissionState) {
-        if (submissionState is SubmissionState.Error) {
-            val msg = (submissionState as SubmissionState.Error).message
-            // 🔥 HANDLING ERROR LEBIH PINTAR 🔥
-            if (msg.contains("sudah terdaftar", ignoreCase = true)) {
-                // Kalau udah daftar, tampilkan pesan sukses aja atau info
-                snackbarHostState.showSnackbar("Anda sudah terdaftar di kursus ini ✅")
-            } else {
-                snackbarHostState.showSnackbar(msg)
-            }
-            viewModel.resetSubmissionState()
-        }
         if (submissionState is SubmissionState.Success) {
-            // Tampilkan Dialog Sukses
-            // Dialog ini nanti memicu onDaftarSuccess -> Pindah halaman
             onDaftarSuccess()
             viewModel.resetSubmissionState()
         }
     }
 
     Scaffold(
-        containerColor = AppBackground,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Detail Kursus") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppBackground,
-                    navigationIconContentColor = Color.Black
-                )
+                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Kembali") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
         bottomBar = {
-            if (detailState is KursusDetailUiState.Success) {
-                PrimaryButton(
-                    text = "DAFTAR SEKARANG",
-                    onClick = { showDaftarDialog = true },
-                    enabled = submissionState != SubmissionState.Loading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                )
-            }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when (detailState) {
-                is KursusDetailUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = PrimaryGreen
-                    )
-                }
-                is KursusDetailUiState.Error -> {
+            if (uiState is KursusDetailUiState.Success) {
+               
+                Button(
+                    onClick = { showDialog = true },
+                    enabled = submissionState !is SubmissionState.Loading,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                ) {
                     Text(
-                        text = (detailState as KursusDetailUiState.Error).message,
-                        color = Color.Red,
-                        modifier = Modifier.align(Alignment.Center)
+                        text = if (submissionState is SubmissionState.Loading) "MEMPROSES..." else "DAFTAR SEKARANG",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
-                is KursusDetailUiState.Success -> {
-                    val kursus = (detailState as KursusDetailUiState.Success).data
-                    KursusContent(kursus)
-                }
+            }
+        }
+    ) { padding ->
+        Box(Modifier.padding(padding)) {
+            when (val state = uiState) {
+                is KursusDetailUiState.Success -> KursusContent(state.data)
+                is KursusDetailUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = PrimaryGreen)
+                is KursusDetailUiState.Error -> Text(state.message, Modifier.align(Alignment.Center), color = Color.Red)
             }
         }
     }
 
-    if (showDaftarDialog) {
+    if (showDialog) {
         ConfirmationDialog(
-            onDismiss = { showDaftarDialog = false },
+            onDismiss = { showDialog = false },
             onConfirm = {
-                showDaftarDialog = false
-                if (userToken.isNotEmpty()) {
-                    viewModel.daftarKursus(kursusId, userToken)
-                }
+                showDialog = false
+                val idInt = kursusId.toIntOrNull() ?: 0
+                viewModel.enrollCourse(idInt)
             },
-            title = "Daftar untuk kursus ini?",
-            icon = { Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryGreen) }
+            title = "Daftar Kursus?",
+            icon = { Icon(Icons.Default.School, null, tint = PrimaryGreen) }
         )
-    }
-
-    if (submissionState == SubmissionState.Loading) {
-        Dialog(onDismissRequest = {}) {
-            CircularProgressIndicator(color = PrimaryGreen)
-        }
     }
 }
 
 @Composable
-fun KursusContent(kursus: KursusDetail) {
-    val fullImageUrl = if (kursus.imageUrl != null && !kursus.imageUrl.startsWith("http")) {
-        "${ApiClient.BASE_URL}${kursus.imageUrl}"
-    } else {
-        kursus.imageUrl
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 80.dp)
-    ) {
+fun KursusContent(kursus: Course) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
-            if (fullImageUrl != null) {
-                AsyncImage(
-                    model = fullImageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+            Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)).background(PrimaryGreen.copy(0.2f)), Alignment.Center) {
+                Icon(Icons.Default.School, null, tint = PrimaryGreen, modifier = Modifier.size(80.dp))
             }
+            Spacer(Modifier.height(16.dp))
         }
-
         item {
-            Text(kursus.providerName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-            Text(
-                text = kursus.title,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        item {
+            Text(kursus.title, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
             Text("Deskripsi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
             Text(kursus.description ?: "-", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        item {
+            Spacer(Modifier.height(16.dp))
             Text("Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val lokasiDisplay = if (kursus.locationDetail != null) {
-                "${kursus.locationType} (${kursus.locationDetail})"
-            } else {
-                kursus.locationType
-            }
-
-            KursusInfoRow(icon = Icons.Default.LocationOn, text = lokasiDisplay)
-
-            if (kursus.dateStart != null) {
-                KursusInfoRow(icon = Icons.Default.CalendarToday, text = kursus.dateStart.take(10))
-            }
-
-            if (kursus.quota != null) {
-                KursusInfoRow(icon = Icons.Default.People, text = "${kursus.quota} Peserta")
-            }
+            KursusInfoRow(Icons.Default.Person, "Mentor: ${kursus.mentor ?: "-"}")
+            KursusInfoRow(Icons.Default.AttachMoney, "Harga: ${kursus.price ?: "Gratis"}")
         }
     }
 }
 
 @Composable
 fun KursusInfoRow(icon: ImageVector, text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 4.dp)
-    ) {
-        Icon(icon, contentDescription = null, tint = SecondaryGreen, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(12.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Icon(icon, null, tint = SecondaryGreen, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge)
     }
 }

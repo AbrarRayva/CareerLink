@@ -1,210 +1,230 @@
 package com.elevatestudio.careerlink.ui.screen.kursus
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.elevatestudio.careerlink.data.model.BadgeItem
-import com.elevatestudio.careerlink.data.model.CourseStats
-import com.elevatestudio.careerlink.data.model.KursusDetail
-import com.elevatestudio.careerlink.data.model.KursusItem
+import com.elevatestudio.careerlink.data.model.*
 import com.elevatestudio.careerlink.data.remote.ApiClient
-import com.elevatestudio.careerlink.ui.screen.lowongan.SubmissionState
+import com.elevatestudio.careerlink.utils.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 
-// State UI
-sealed class KursusUiState {
-    object Loading : KursusUiState()
-    data class Success(val data: List<KursusItem>) : KursusUiState()
-    data class Error(val message: String) : KursusUiState()
+// --- STATES ---
+sealed interface KursusUiState {
+    object Loading : KursusUiState
+    data class Success(val data: List<Course>) : KursusUiState
+    data class Error(val message: String) : KursusUiState
 }
 
-sealed class KursusDetailUiState {
-    object Loading : KursusDetailUiState()
-    data class Success(val data: KursusDetail) : KursusDetailUiState()
-    data class Error(val message: String) : KursusDetailUiState()
+sealed interface KursusDetailUiState {
+    object Loading : KursusDetailUiState
+    data class Success(val data: Course) : KursusDetailUiState
+    data class Error(val message: String) : KursusDetailUiState
 }
 
-sealed class BadgeUiState {
-    object Loading : BadgeUiState()
-    data class Success(val data: List<BadgeItem>) : BadgeUiState()
-    data class Error(val message: String) : BadgeUiState()
+sealed interface SubmissionState {
+    object Idle : SubmissionState
+    object Loading : SubmissionState
+    data class Success(val message: String) : SubmissionState
+    data class Error(val message: String) : SubmissionState
 }
 
-class KursusViewModel : ViewModel() {
+class KursusViewModel(application: Application) : AndroidViewModel(application) {
 
-    // State Data
-    private val _rekomendasiState = MutableStateFlow<KursusUiState>(KursusUiState.Loading)
-    val rekomendasiState: StateFlow<KursusUiState> = _rekomendasiState
+   
+    private val userPreferences = UserPreferences(application)
+    private val apiService = ApiClient.instance
 
-    private val _listKursusState = MutableStateFlow<KursusUiState>(KursusUiState.Loading)
-    val listKursusState: StateFlow<KursusUiState> = _listKursusState
+   
+    private val _kursusUiState = MutableStateFlow<KursusUiState>(KursusUiState.Loading)
+    val kursusUiState = _kursusUiState.asStateFlow()
 
-    private val _detailState = MutableStateFlow<KursusDetailUiState>(KursusDetailUiState.Loading)
-    val detailState: StateFlow<KursusDetailUiState> = _detailState
-
-    private val _badgeState = MutableStateFlow<BadgeUiState>(BadgeUiState.Loading)
-    val badgeState: StateFlow<BadgeUiState> = _badgeState
-
-    // Stats State (Default 0)
-    private val _statsState = MutableStateFlow<CourseStats>(CourseStats(0, 0, 0))
-    val statsState: StateFlow<CourseStats> = _statsState
+    private val _detailUiState = MutableStateFlow<KursusDetailUiState>(KursusDetailUiState.Loading)
+    val detailUiState = _detailUiState.asStateFlow()
 
     private val _submissionState = MutableStateFlow<SubmissionState>(SubmissionState.Idle)
-    val submissionState: StateFlow<SubmissionState> = _submissionState
+    val submissionState = _submissionState.asStateFlow()
 
-    // 1. Refresh Dashboard (Satu Fungsi Saja!)
-    fun refreshDashboard(token: String) {
-        getStats(token)
-        getMyBadges(token)
-        getRecommendedCourses(token)
-    }
+    private val _stats = MutableStateFlow(UserStats())
+    val stats = _stats.asStateFlow()
 
-    // 2. Get Stats
-    fun getStats(token: String) {
-        viewModelScope.launch {
-            try {
-                val response = ApiClient.instance.getCourseStats("Bearer $token")
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _statsState.value = response.body()!!.data
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    private val _badgeState = MutableStateFlow<List<BadgeItem>>(emptyList())
+    val badgeState = _badgeState.asStateFlow()
+
+    private val _recommendedCourses = MutableStateFlow<List<Course>>(emptyList())
+    val recommendedCourses = _recommendedCourses.asStateFlow()
+
+    private val _myCourses = MutableStateFlow<List<Course>>(emptyList())
+    val myCourses = _myCourses.asStateFlow()
+
+   
+    private suspend fun getToken(): String {
+        val token = userPreferences.authToken.first()
+        if (token.isNullOrEmpty()) {
+            Log.e("KursusVM", "⚠️ TOKEN KOSONG di UserPreferences")
+            return ""
         }
+        return token
     }
 
-    // 3. Rekomendasi (Terima Token)
-    fun getRecommendedCourses(token: String? = null) {
+    fun refreshDashboard() {
         viewModelScope.launch {
-            _rekomendasiState.value = KursusUiState.Loading
+            val token = getToken()
+            if (token.isEmpty()) return@launch
+
+           
             try {
-                val authHeader = if (token != null) "Bearer $token" else null
-                val response = ApiClient.instance.getRecommendedCourses(authHeader)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _rekomendasiState.value = KursusUiState.Success(response.body()!!.data)
+                val statsRes = apiService.getUserStats("Bearer $token")
+                if (statsRes.isSuccessful && statsRes.body()?.success == true) {
+                    _stats.value = statsRes.body()!!.data
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+
+           
+            try {
+                val recRes = apiService.getRecommendedCourses("Bearer $token")
+                if (recRes.isSuccessful && recRes.body()?.success == true) {
+                    _recommendedCourses.value = recRes.body()!!.data
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+
+           
+            try {
+                val badgeRes = apiService.getMyBadges("Bearer $token")
+                if (badgeRes.isSuccessful && badgeRes.body()?.success == true) {
+                    val badgeList = badgeRes.body()!!.data
+                    _badgeState.value = badgeList
+
+                   
+                    Log.d("KursusVM", "Berhasil ambil ${badgeList.size} badge")
                 } else {
-                    _rekomendasiState.value = KursusUiState.Error("Gagal memuat rekomendasi")
+                    Log.e("KursusVM", "Gagal ambil badge: ${badgeRes.code()}")
                 }
             } catch (e: Exception) {
-                _rekomendasiState.value = KursusUiState.Error(e.message ?: "Error")
+                Log.e("KursusVM", "Error ambil badge", e)
             }
         }
     }
 
-    // 4. Get All Courses
+   
+    fun enrollCourse(courseId: Int) {
+        viewModelScope.launch {
+            val token = getToken()
+            if (token.isEmpty()) {
+                _submissionState.value = SubmissionState.Error("Token Kosong")
+                return@launch
+            }
+
+            _submissionState.value = SubmissionState.Loading
+            try {
+                val response = apiService.enrollCourse("Bearer $token", courseId)
+                if (response.isSuccessful) {
+                    _submissionState.value = SubmissionState.Success("Berhasil Mendaftar!")
+                    refreshDashboard()
+                } else {
+                    _submissionState.value = SubmissionState.Error("Gagal Mendaftar")
+                }
+            } catch (e: Exception) {
+                _submissionState.value = SubmissionState.Error(e.message ?: "Error Network")
+            }
+        }
+    }
+
+   
+    fun uploadBadge(body: MultipartBody.Part) {
+        viewModelScope.launch {
+            val token = getToken()
+            if (token.isEmpty()) {
+                _submissionState.value = SubmissionState.Error("Token Kosong")
+                return@launch
+            }
+
+            _submissionState.value = SubmissionState.Loading
+            try {
+                val response = apiService.uploadCertificate("Bearer $token", body)
+                if (response.isSuccessful) {
+                    _submissionState.value = SubmissionState.Success("Berhasil Upload")
+                    refreshDashboard()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Gagal Upload"
+                    Log.e("KursusVM", "Upload Fail: $errorMsg")
+                    _submissionState.value = SubmissionState.Error("Gagal Upload")
+                }
+            } catch (e: Exception) {
+                _submissionState.value = SubmissionState.Error(e.message ?: "Error Network")
+            }
+        }
+    }
+
+   
+    fun scanQrBadge(courseId: Int) {
+        viewModelScope.launch {
+            val token = getToken()
+            if (token.isEmpty()) return@launch
+
+            _submissionState.value = SubmissionState.Loading
+            try {
+                val body = mapOf("courseId" to courseId.toString())
+                val response = apiService.scanBadge("Bearer $token", body)
+                if (response.isSuccessful) {
+                    _submissionState.value = SubmissionState.Success("Berhasil Scan")
+                    refreshDashboard()
+                } else {
+                    _submissionState.value = SubmissionState.Error("QR Invalid")
+                }
+            } catch (e: Exception) { _submissionState.value = SubmissionState.Error("Error") }
+        }
+    }
+
+   
+    fun getDetailKursus(courseId: Int) {
+        viewModelScope.launch {
+            val token = getToken()
+            if (token.isEmpty()) return@launch
+
+            _detailUiState.value = KursusDetailUiState.Loading
+            try {
+                val response = apiService.getCourseDetail("Bearer $token", courseId)
+                if (response.isSuccessful) {
+                    response.body()?.data?.let { _detailUiState.value = KursusDetailUiState.Success(it) }
+                } else {
+                    _detailUiState.value = KursusDetailUiState.Error("Gagal load")
+                }
+            } catch (e: Exception) { _detailUiState.value = KursusDetailUiState.Error("Error") }
+        }
+    }
+
+   
+    fun getMyCourses(status: String) {
+        viewModelScope.launch {
+            val token = getToken()
+            if (token.isEmpty()) return@launch
+            try {
+                val cleanStatus = if (status.contains("completed")) "Completed" else "Active"
+                val res = apiService.getEnrolledCourses("Bearer $token", cleanStatus)
+                if (res.isSuccessful) _myCourses.value = res.body()?.data ?: emptyList()
+            } catch (e: Exception) {}
+        }
+    }
+
     fun getAllCourses(query: String? = null) {
         viewModelScope.launch {
-            _listKursusState.value = KursusUiState.Loading
+            val token = getToken()
+           
+           
+
+            _kursusUiState.value = KursusUiState.Loading
             try {
-                val response = ApiClient.instance.getCourses(query)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _listKursusState.value = KursusUiState.Success(response.body()!!.data)
-                } else {
-                    _listKursusState.value = KursusUiState.Error("Gagal memuat kursus")
-                }
-            } catch (e: Exception) {
-                _listKursusState.value = KursusUiState.Error(e.message ?: "Error")
-            }
+                val res = apiService.getCourses("Bearer $token")
+                if (res.isSuccessful) _kursusUiState.value = KursusUiState.Success(res.body()?.data ?: emptyList())
+                else _kursusUiState.value = KursusUiState.Error("Gagal")
+            } catch (e: Exception) { _kursusUiState.value = KursusUiState.Error("Error") }
         }
     }
 
-    // 5. Get Detail
-    fun getDetailKursus(id: String) {
-        viewModelScope.launch {
-            _detailState.value = KursusDetailUiState.Loading
-            try {
-                val response = ApiClient.instance.getCourseDetail(id)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _detailState.value = KursusDetailUiState.Success(response.body()!!.data)
-                } else {
-                    _detailState.value = KursusDetailUiState.Error("Gagal memuat detail")
-                }
-            } catch (e: Exception) {
-                _detailState.value = KursusDetailUiState.Error(e.message ?: "Error")
-            }
-        }
-    }
-
-    // 6. Get My Badges
-    fun getMyBadges(token: String) {
-        viewModelScope.launch {
-            _badgeState.value = BadgeUiState.Loading
-            try {
-                val response = ApiClient.instance.getMyBadges("Bearer $token")
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _badgeState.value = BadgeUiState.Success(response.body()!!.data)
-                } else {
-                    _badgeState.value = BadgeUiState.Success(emptyList())
-                }
-            } catch (e: Exception) {
-                _badgeState.value = BadgeUiState.Error(e.message ?: "Gagal memuat badge")
-            }
-        }
-    }
-
-    // 7. Daftar Kursus
-    fun daftarKursus(kursusId: String, token: String) {
-        viewModelScope.launch {
-            _submissionState.value = SubmissionState.Loading
-            try {
-                val response = ApiClient.instance.enrollCourse("Bearer $token", kursusId)
-                if (response.isSuccessful) {
-                    refreshDashboard(token) // Refresh
-                    _submissionState.value = SubmissionState.Success
-                } else {
-                    val errorBody = response.errorBody()?.string() ?: ""
-                    if (response.code() == 400 || errorBody.contains("sudah", true)) {
-                        _submissionState.value = SubmissionState.Error("Anda sudah terdaftar.")
-                    } else {
-                        _submissionState.value = SubmissionState.Error("Gagal mendaftar")
-                    }
-                }
-            } catch (e: Exception) {
-                _submissionState.value = SubmissionState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    // 8. Scan QR Badge
-    fun scanQrBadge(token: String, courseId: Int) {
-        viewModelScope.launch {
-            _submissionState.value = SubmissionState.Loading
-            try {
-                val body = mapOf("course_id" to courseId)
-                val response = ApiClient.instance.scanBadge("Bearer $token", body)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    refreshDashboard(token) // Refresh
-                    _submissionState.value = SubmissionState.Success
-                } else {
-                    _submissionState.value = SubmissionState.Error("Gagal scan badge")
-                }
-            } catch (e: Exception) {
-                _submissionState.value = SubmissionState.Error(e.message ?: "Error")
-            }
-        }
-    }
-
-    // 9. Upload Badge
-    fun uploadBadge(token: String, file: MultipartBody.Part) {
-        viewModelScope.launch {
-            _submissionState.value = SubmissionState.Loading
-            try {
-                val response = ApiClient.instance.uploadBadge(file)
-                if (response.isSuccessful) {
-                    refreshDashboard(token) // Refresh
-                    _submissionState.value = SubmissionState.Success
-                } else {
-                    _submissionState.value = SubmissionState.Error("Gagal upload")
-                }
-            } catch (e: Exception) {
-                _submissionState.value = SubmissionState.Error(e.message ?: "Error")
-            }
-        }
-    }
-
-    fun resetSubmissionState() {
-        _submissionState.value = SubmissionState.Idle
-    }
+    fun resetSubmissionState() { _submissionState.value = SubmissionState.Idle }
 }

@@ -33,9 +33,6 @@ import androidx.compose.ui.window.Dialog
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
-/**
- * Dialog konfirmasi "Yes/No" (Kanan-Kiri)
- */
 @Composable
 fun ConfirmationDialog(
     onDismiss: () -> Unit,
@@ -95,9 +92,6 @@ fun ConfirmationDialog(
     }
 }
 
-/**
- * Dialog custom untuk "Lamaran Berhasil Terkirim" (atau sukses lainnya)
- */
 @Composable
 fun SuccessDialog(
     onDismiss: () -> Unit,

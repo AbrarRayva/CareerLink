@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.elevatestudio.careerlink.R // Pastikan import R-nya benar
+import com.elevatestudio.careerlink.R
 
 @Composable
 fun AppLogo(modifier: Modifier = Modifier) {

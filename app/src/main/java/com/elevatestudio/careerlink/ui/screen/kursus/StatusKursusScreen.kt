@@ -12,52 +12,53 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.elevatestudio.careerlink.data.model.KursusItem
-import com.elevatestudio.careerlink.data.remote.ApiClient
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
-import com.elevatestudio.careerlink.utils.UserPreferences
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusKursusScreen(
-    statusType: String, // "Active" atau "Completed"
+    statusType: String,
     onBackClick: () -> Unit,
     onDetailClick: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val viewModel: KursusViewModel = viewModel()
+    val myCourses by viewModel.myCourses.collectAsState()
 
-    // State List
-    var listKursus by remember { mutableStateOf<List<KursusItem>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+   
+    val filteredList = remember(myCourses, statusType) {
+        val cleanStatus = statusType.replace("status_", "", ignoreCase = true)
+        val isLookingForCompleted = cleanStatus.equals("completed", ignoreCase = true)
 
-    LaunchedEffect(Unit) {
-        scope.launch {
-            val token = UserPreferences(context).authToken.first() ?: ""
-            try {
-                // PANGGIL API 'Enrolled List' YANG BARU KITA BUAT
-                val response = ApiClient.instance.getMyEnrolledCourses("Bearer $token", statusType)
+        myCourses.filter { course ->
+           
+            val statusApi = course.enrollmentStatus ?: course.status ?: ""
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    // Sekarang listKursus HANYA berisi data yang filternya pas (Aktif saja atau Selesai saja)
-                    listKursus = response.body()!!.data
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                isLoading = false
+            if (isLookingForCompleted) {
+                statusApi.equals("Selesai", ignoreCase = true) ||
+                        statusApi.equals("Completed", ignoreCase = true) ||
+                        statusApi.equals("Lulus", ignoreCase = true)
+            } else {
+                !statusApi.equals("Selesai", ignoreCase = true) &&
+                        !statusApi.equals("Completed", ignoreCase = true) &&
+                        !statusApi.equals("Lulus", ignoreCase = true)
             }
         }
+    }
+
+    val pageTitle = if (statusType.contains("completed")) "Kursus Selesai" else "Kursus Aktif"
+
+    LaunchedEffect(statusType) {
+       
+        viewModel.getMyCourses(statusType)
     }
 
     Scaffold(
         containerColor = AppBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Kursus $statusType") }, // Judul sesuai tombol (Aktif/Selesai)
+                title = { Text(pageTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Kembali") }
                 },
@@ -65,17 +66,16 @@ fun StatusKursusScreen(
             )
         }
     ) { padding ->
-        if (isLoading) {
+        if (filteredList.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryGreen)
-            }
-        } else if (listKursus.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Belum ada kursus di status ini", color = Color.Gray)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Belum ada kursus di sini", color = Color.Gray)
+                }
             }
         } else {
             LazyColumn(Modifier.padding(padding).padding(16.dp)) {
-                items(listKursus) { item ->
+                items(filteredList) { item ->
+                   
                     KursusListCard(item = item, onClick = { onDetailClick(item.id.toString()) })
                     Spacer(Modifier.height(8.dp))
                 }

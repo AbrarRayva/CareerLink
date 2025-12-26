@@ -20,7 +20,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color // <-- IMPORT WARNA
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
@@ -44,11 +44,11 @@ val navItems = listOf(
 
 @Composable
 fun AppBottomNavBar(
-    currentRoute: String, // Kita butuh ini biar tau lagi di layar mana
+    currentRoute: String,
     onItemSelected: (String) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color.White // Ganti warna sesuai desain
+        containerColor = Color.White
     ) {
         navItems.forEach { item ->
             val isSelected = item.route == currentRoute

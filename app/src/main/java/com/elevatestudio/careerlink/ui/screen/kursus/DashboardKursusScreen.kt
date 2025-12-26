@@ -1,7 +1,5 @@
 package com.elevatestudio.careerlink.ui.screen.kursus
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,35 +10,34 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.elevatestudio.careerlink.data.model.BadgeItem
-import com.elevatestudio.careerlink.data.model.KursusItem
+import com.elevatestudio.careerlink.data.model.Course
+import com.elevatestudio.careerlink.data.model.UserStats
 import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.utils.UserPreferences
 import kotlinx.coroutines.flow.first
+import android.util.Log
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+// --- FUNGSI UTAMA LAYAR DASHBOARD ---
 @Composable
 fun DashboardKursusScreen(
     onNavigate: (String) -> Unit,
@@ -51,285 +48,225 @@ fun DashboardKursusScreen(
     val context = LocalContext.current
     val viewModel: KursusViewModel = viewModel()
 
-    // States
-    val rekomendasiState by viewModel.rekomendasiState.collectAsState()
-    val badgeState by viewModel.badgeState.collectAsState()
-    val statsState by viewModel.statsState.collectAsState()
+    val rekomendasi by viewModel.recommendedCourses.collectAsState()
+    val badges by viewModel.badgeState.collectAsState()
+    val stats by viewModel.stats.collectAsState()
 
-    val scope = rememberCoroutineScope()
-    var username by remember { mutableStateOf("Sobat Career") }
-    var isVisible by remember { mutableStateOf(false) }
+    var username by remember { mutableStateOf("User") }
 
-    // Load Data
     LaunchedEffect(Unit) {
-        isVisible = true
-        scope.launch {
-            val prefs = UserPreferences(context)
-            val token = prefs.authToken.first()
-            val name = prefs.userName.first()
-
-            if (!name.isNullOrEmpty()) username = name
-
-            if (token != null) {
-                viewModel.refreshDashboard(token)
-            } else {
-                viewModel.getRecommendedCourses()
-            }
-        }
+        val name = UserPreferences(context).userName.first()
+        if (!name.isNullOrEmpty()) username = name
+        viewModel.refreshDashboard()
     }
 
     Scaffold(
-        containerColor = AppBackground,
-        bottomBar = {
-            AppBottomNavBar(currentRoute = "kursus", onItemSelected = onNavigate)
-        }
-    ) { paddingValues ->
+        topBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(PrimaryGreen)
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
+            ) {
+                Text(
+                    text = "Skill & Sertifikasi",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Halo, $username 👋",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Tingkatkan skillmu hari ini!",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp
+                )
+            }
+        },
+        bottomBar = { AppBottomNavBar("kursus", onNavigate) }
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .background(AppBackground)
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
         ) {
-            // 1. Header (Halo User)
+
+           
             item {
+                Text("Koleksi Badge Saya", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    items(badges) { badge -> BadgeCircleItem(badge) }
+                    item { AddBadgeButton(onClick = onNavigateToBadgeScan) }
+                }
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Halo, $username \uD83D\uDC4B",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Tingkatkan skillmu hari ini!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                    }
-                }
             }
 
-            // 2. Badge Saya
+           
             item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(500)) + slideInVertically { it / 2 }
-                ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text("Koleksi Badge Saya", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        val badges = if (badgeState is BadgeUiState.Success) (badgeState as BadgeUiState.Success).data else emptyList()
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            items(badges) { badge ->
-                                BadgeCircleItem(badge)
-                            }
-                            item {
-                                AddBadgeButton(onClick = onNavigateToBadgeScan)
-                            }
-                        }
-                    }
-                }
+                Text("Statistik Belajar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                StatsCard(stats, onNavigate)
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // 3. Statistik Course (Fixed Syntax Error)
+           
             item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(600)) + slideInVertically { it / 2 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text("Statistik Belajar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Text("Rekomendasi Untukmu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onNavigateToDaftarKursus) {
+                        Text("Lihat Semua", color = PrimaryGreen, fontSize = 12.sp)
+                    }
+                }
 
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceAround
-                            ) {
-                                StatItem(
-                                    value = statsState.activeCourses.toString(),
-                                    label = "Aktif",
-                                    icon = Icons.Default.School,
-                                    color = Color(0xFF2196F3),
-                                    onClick = { onNavigate("status_active") }
-                                )
-                                StatItem(
-                                    value = statsState.completedCourses.toString(),
-                                    label = "Selesai",
-                                    icon = Icons.Default.Verified,
-                                    color = PrimaryGreen,
-                                    onClick = { onNavigate("status_completed") }
-                                )
-                                StatItem(
-                                    value = statsState.totalBadges.toString(),
-                                    label = "Badge",
-                                    icon = Icons.Default.EmojiEvents,
-                                    color = Color(0xFFFFC107),
-                                    onClick = { onNavigateToBadgeScan() }
-                                )
-                            }
+                if (rekomendasi.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        Text("Belum ada rekomendasi", color = Color.Gray, fontSize = 12.sp)
+                    }
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(rekomendasi) { kursus ->
+                            KursusRekomendasiCard(kursus) { onNavigateToDetailKursus(kursus.id.toString()) }
                         }
                     }
                 }
             }
-
-            // 4. Course Rekomendasi
-            item {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(tween(700)) + slideInVertically { it / 2 }
-                ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Rekomendasi Untukmu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            TextButton(onClick = onNavigateToDaftarKursus) {
-                                Text("Lihat Semua", color = PrimaryGreen)
-                            }
-                        }
-
-                        when (rekomendasiState) {
-                            is KursusUiState.Loading -> Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PrimaryGreen) }
-                            is KursusUiState.Success -> {
-                                val list = (rekomendasiState as KursusUiState.Success).data
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    items(list) { kursus ->
-                                        KursusRekomendasiCard(item = kursus, onClick = { onNavigateToDetailKursus(kursus.id.toString()) })
-                                    }
-                                }
-                            }
-                            else -> Text("Gagal memuat rekomendasi", color = Color.Red)
-                        }
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(30.dp)) }
         }
     }
 }
 
-// --- KOMPONEN PENDUKUNG ---
+// --- KOMPONEN PENDUKUNG (HELPER) ---
 
 @Composable
 fun BadgeCircleItem(item: BadgeItem) {
-    val fullUrl = if (item.imageUrl != null && !item.imageUrl.startsWith("http")) {
-        "${ApiClient.BASE_URL}${item.imageUrl}"
-    } else item.imageUrl
+   
+    val baseUrl = ApiClient.BASE_URL
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(70.dp)) {
-        AsyncImage(
-            model = fullUrl,
-            contentDescription = item.title,
-            placeholder = ColorPainter(Color.LightGray),
-            error = ColorPainter(Color.Gray),
-            contentScale = ContentScale.Crop,
+   
+   
+   
+    var cleanPath = item.imageUrl?.replace("\\", "/") ?: ""
+    cleanPath = cleanPath.removePrefix("public/")
+    cleanPath = cleanPath.removePrefix("/")      
+
+    val fullUrl = if (cleanPath.startsWith("http")) {
+        cleanPath
+    } else {
+        "${baseUrl.removeSuffix("/")}/$cleanPath"
+    }
+
+   
+    android.util.Log.d("BadgeURL", "Original: ${item.imageUrl} -> Final: $fullUrl")
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(end = 8.dp)) {
+        Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(60.dp)
                 .clip(CircleShape)
-                .border(2.dp, PrimaryGreen, CircleShape)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(item.title, style = MaterialTheme.typography.labelSmall, maxLines = 1, fontSize = 10.sp)
+                .background(Color.White)
+                .border(1.dp, PrimaryGreen, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(fullUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Badge",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                   
+                    CircularProgressIndicator(modifier = Modifier.padding(15.dp), color = PrimaryGreen, strokeWidth = 2.dp)
+                },
+                error = {
+                   
+                    Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFFFC107), modifier = Modifier.size(30.dp))
+                }
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(item.name, fontSize = 10.sp, maxLines = 1)
     }
 }
 
 @Composable
 fun AddBadgeButton(onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(70.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(60.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFE8F5E9))
                 .clickable { onClick() }
                 .border(1.dp, PrimaryGreen, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Tambah", tint = PrimaryGreen, modifier = Modifier.size(32.dp))
+            Icon(Icons.Default.Add, null, tint = PrimaryGreen, modifier = Modifier.size(30.dp))
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text("Tambah", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp)
+        Spacer(Modifier.height(4.dp))
+        Text("Tambah", fontSize = 10.sp)
     }
 }
 
 @Composable
-fun StatItem(
-    value: String,
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-    }
-}
-
-@Composable
-fun KursusRekomendasiCard(item: KursusItem, onClick: () -> Unit) {
-    val fullUrl = if (item.imageUrl != null && !item.imageUrl.startsWith("http")) {
-        "${ApiClient.BASE_URL}${item.imageUrl}"
-    } else {
-        item.imageUrl
-    }
-
+fun StatsCard(stats: UserStats, onNavigate: (String) -> Unit) {
     Card(
-        modifier = Modifier
-            .size(width = 180.dp, height = 120.dp)
-            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
         shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            StatItem(stats.activeCourses.toString(), "Aktif", Icons.Default.School, Color(0xFF2196F3)) { onNavigate("status_active") }
+            StatItem(stats.completedCourses.toString(), "Selesai", Icons.Default.Verified, PrimaryGreen) { onNavigate("status_completed") }
+            StatItem(stats.totalBadges.toString(), "Badge", Icons.Default.EmojiEvents, Color(0xFFFFC107)) { onNavigate("badge_scan") }
+        }
+    }
+}
+
+@Composable
+fun StatItem(value: String, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(label, color = Color.Gray, fontSize = 12.sp)
+    }
+}
+
+@Composable
+fun KursusRekomendasiCard(item: Course, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.width(200.dp).clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
-                model = fullUrl,
-                contentDescription = item.title,
-                placeholder = ColorPainter(Color.LightGray),
-                fallback = ColorPainter(Color.Gray),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
+        Column {
+            Box(Modifier.fillMaxWidth().height(100.dp).background(PrimaryGreen.copy(0.1f)), Alignment.Center) {
+                Icon(Icons.Default.School, null, tint = PrimaryGreen, modifier = Modifier.size(40.dp))
+            }
+            Column(Modifier.padding(12.dp)) {
+                Text(item.title, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(item.role ?: "Elevate Academy", fontSize = 10.sp, color = PrimaryGreen)
             }
         }
     }

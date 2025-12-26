@@ -34,11 +34,11 @@ fun ForgotPasswordScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. Logo
+       
         AppLogo()
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 2. Judul
+       
         Text(
             text = "Ganti Kata Sandi Anda",
             fontSize = 20.sp,
@@ -47,7 +47,7 @@ fun ForgotPasswordScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 3. Deskripsi
+       
         Text(
             text = "Masukkan email dan kata sandi baru Anda.",
             fontSize = 14.sp,
@@ -56,21 +56,21 @@ fun ForgotPasswordScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 4. Form Input
+       
         AuthTextField(
             value = email.value,
             onValueChange = { email.value = it },
             label = "Alamat Email",
             keyboardType = KeyboardType.Email
         )
-        Spacer(modifier = Modifier.height(16.dp)) // Tambah input password baru
+        Spacer(modifier = Modifier.height(16.dp))
         AuthTextField(
             value = newPassword.value,
             onValueChange = { newPassword.value = it },
             label = "Kata Sandi Baru",
             isPassword = true
         )
-        Spacer(modifier = Modifier.height(16.dp)) // Tambah input konfirmasi
+        Spacer(modifier = Modifier.height(16.dp))
         AuthTextField(
             value = confirmPassword.value,
             onValueChange = { confirmPassword.value = it },
@@ -80,7 +80,7 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
 
-        // 5. Tombol Kirim
+       
         PrimaryButton(
             text = "Simpan Kata Sandi",
             onClick = { onSavePasswordClicked(email.value, newPassword.value, confirmPassword.value) },

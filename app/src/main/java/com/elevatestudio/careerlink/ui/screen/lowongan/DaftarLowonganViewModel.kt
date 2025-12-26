@@ -5,83 +5,61 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+// 🔥 DUA IMPORT INI WAJIB ADA 🔥
 import com.elevatestudio.careerlink.data.model.LowonganDetail
 import com.elevatestudio.careerlink.data.model.LowonganItem
-import com.elevatestudio.careerlink.data.remote.RetrofitClient
-import com.elevatestudio.careerlink.utils.UserPreferences
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.elevatestudio.careerlink.data.remote.ApiClient
 import kotlinx.coroutines.launch
 
-sealed interface HomeUiState {
-    object Loading : HomeUiState
-    data class Success(val jobs: List<LowonganItem>) : HomeUiState
-    data class Error(val message: String) : HomeUiState
+sealed class LowonganUiState {
+    object Loading : LowonganUiState()
+    data class Success(val data: List<LowonganItem>) : LowonganUiState()
+    data class Error(val message: String) : LowonganUiState()
 }
 
-sealed interface DetailUiState {
-    object Idle : DetailUiState
-    object Loading : DetailUiState
-    data class Success(val data: LowonganDetail) : DetailUiState
-    data class Error(val message: String) : DetailUiState
+sealed class DetailLowonganUiState {
+    object Loading : DetailLowonganUiState()
+    data class Success(val data: LowonganDetail) : DetailLowonganUiState()
+    data class Error(val message: String) : DetailLowonganUiState()
 }
 
 class DaftarLowonganViewModel : ViewModel() {
-
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-    // Variable Filter Aktif
-    var currentFilter by mutableStateOf<String?>(null)
+    var lowonganState: LowonganUiState by mutableStateOf(LowonganUiState.Loading)
         private set
 
-    // 2. State Detail
-    private val _detailUiState = MutableStateFlow<DetailUiState>(DetailUiState.Idle)
-    val detailUiState: StateFlow<DetailUiState> = _detailUiState.asStateFlow()
+    var detailState: DetailLowonganUiState by mutableStateOf(DetailLowonganUiState.Loading)
+        private set
 
-    init {
-        getJobs()
-    }
-    fun getJobs(filterType: String? = null, searchQuery: String? = null, token: String? = null) {
+    private val apiService = ApiClient.instance
+
+    fun getLowongan(search: String? = null, type: String? = null) {
         viewModelScope.launch {
-            _uiState.value = HomeUiState.Loading
-            if (searchQuery.isNullOrEmpty()) {
-                currentFilter = filterType
-            }
-
+            lowonganState = LowonganUiState.Loading
             try {
-
-                val response = RetrofitClient.instance.getLowongan(
-                    search = searchQuery,
-                    type = filterType,
-                    token = if (token != null) "Bearer $token" else null
-                )
-
-                if (response.isSuccessful && response.body() != null) {
-                    _uiState.value = HomeUiState.Success(response.body()!!)
+                val response = apiService.getLowongan(search, type, token = null)
+                if (response.isSuccessful) {
+                    lowonganState = LowonganUiState.Success(response.body() ?: emptyList())
                 } else {
-                    _uiState.value = HomeUiState.Error("Gagal: ${response.message()}")
+                    lowonganState = LowonganUiState.Error("Gagal memuat data")
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Error: ${e.message}")
+                lowonganState = LowonganUiState.Error(e.message ?: "Terjadi kesalahan")
             }
         }
     }
 
     fun getDetailLowongan(id: String) {
         viewModelScope.launch {
-            _detailUiState.value = DetailUiState.Loading
+            detailState = DetailLowonganUiState.Loading
             try {
-                val response = RetrofitClient.instance.getDetailLowongan(id)
-
+                val response = apiService.getDetailLowongan(token = null, lowonganId = id)
                 if (response.isSuccessful && response.body() != null) {
-                    _detailUiState.value = DetailUiState.Success(response.body()!!)
+                    detailState = DetailLowonganUiState.Success(response.body()!!)
                 } else {
-                    _detailUiState.value = DetailUiState.Error("Gagal memuat detail")
+                    detailState = DetailLowonganUiState.Error("Gagal memuat detail")
                 }
             } catch (e: Exception) {
-                _detailUiState.value = DetailUiState.Error("Error: ${e.message}")
+                detailState = DetailLowonganUiState.Error(e.message ?: "Terjadi kesalahan")
             }
         }
     }

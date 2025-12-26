@@ -1,6 +1,6 @@
 package com.elevatestudio.careerlink.ui.viewmodel
 
-import com.elevatestudio.careerlink.data.model.AuthRequest // Sekarang ambil dari AuthModels.kt
+import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
 import com.elevatestudio.careerlink.data.model.UserResponse
 import android.app.Application
@@ -30,12 +30,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
-    // REGISTER
+   
     fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
-                // Sesuaikan body request dengan backend kamu
+               
                 val request = AuthRequest(email = email, password = pass, fullName = name, role = "student")
                 val response = RetrofitClient.instance.register(request)
 
@@ -51,7 +51,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // LOGIN
+   
     fun login(email: String, pass: String, context: Context) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -62,18 +62,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
 
-                    // Di AuthModels.kt, body.user tipenya adalah UserResponse
+                   
                     val userResponse: UserResponse? = body.user
 
                     if (userResponse != null) {
                         val token = body.token ?: ""
 
-                        // userResponse.id (Int) dan userResponse.name (String)
-                        // Sesuai dengan AuthModels.kt kamu
+                       
+                       
                         val userId = userResponse.id.toString()
                         val userName = userResponse.name
 
-                        // SIMPAN KE PREFERENCES
+                       
                         userPreferences.saveAuthToken(token, userId)
                         userPreferences.saveUserName(userName)
 
@@ -92,7 +92,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // FUNGSI KHUSUS UPDATE FCM
+   
     private fun updateFcmToken(authToken: String) {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
@@ -100,11 +100,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 return@addOnCompleteListener
             }
 
-            // Ambil token dari Firebase
+           
             val fcmToken = task.result
             Log.d("AuthViewModel", "FCM Token didapat: $fcmToken")
 
-            // Kirim ke Backend
+           
             viewModelScope.launch {
                 try {
                     RetrofitClient.instance.updateFcmToken(

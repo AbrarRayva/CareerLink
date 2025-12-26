@@ -38,7 +38,7 @@ fun SignUpScreen(
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
 
-    // --- LOGIKA (Dilarang ada UI di sini) ---
+   
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Success -> {
@@ -59,7 +59,7 @@ fun SignUpScreen(
         }
     }
 
-    // --- TAMPILAN (UI) ---
+   
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->

@@ -7,8 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
     const val BASE_URL = "http://192.168.100.32:3000/"
-    // local di emulator Android -> 10.0.2.2
-    // eksternal -> ganti IP (ex: 192.168.x.x)
+   
+   
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

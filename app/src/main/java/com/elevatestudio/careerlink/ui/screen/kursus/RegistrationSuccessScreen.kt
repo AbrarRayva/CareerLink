@@ -1,4 +1,4 @@
-// Lokasi: ui/screen/kursus/RegistrationSuccessScreen.kt
+
 package com.elevatestudio.careerlink.ui.screen.kursus
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -24,7 +24,7 @@ import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 fun RegistrationSuccessScreen(
     onKembaliClick: () -> Unit
 ) {
-    // --- ANIMASI UNTUK IKON CHECK ---
+ 
     var hasAnimated by remember { mutableStateOf(false) }
     val scale = animateFloatAsState(
         targetValue = if (hasAnimated) 1f else 0f,
@@ -33,7 +33,6 @@ fun RegistrationSuccessScreen(
     LaunchedEffect(Unit) {
         hasAnimated = true
     }
-    // --- SELESAI ANIMASI ---
 
     Scaffold(
         containerColor = AppBackground,
@@ -60,13 +59,12 @@ fun RegistrationSuccessScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ikon Check (dengan modifier scale)
             Surface(
                 color = SecondaryGreen.copy(alpha = 0.6f),
                 shape = CircleShape,
                 modifier = Modifier
                     .size(150.dp)
-                    .scale(scale.value) // Terapkan animasi scale
+                    .scale(scale.value)
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
@@ -78,7 +76,7 @@ fun RegistrationSuccessScreen(
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
-            // Teks
+           
             Text(
                 text = "Berhasil Mendaftar",
                 style = MaterialTheme.typography.headlineMedium,

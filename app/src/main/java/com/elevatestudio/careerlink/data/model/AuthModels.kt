@@ -12,7 +12,7 @@ data class AuthRequest(
 
 // 2. Response Utama dari Server
 data class AuthResponse(
-    val success: Boolean? = null, // Tambahan opsional biar ga error kalau server kirim ini
+    val success: Boolean? = null,
     val message: String? = null,
     val token: String?,
     val user: UserResponse?

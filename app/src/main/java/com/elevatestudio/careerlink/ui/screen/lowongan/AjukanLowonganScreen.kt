@@ -164,7 +164,7 @@ fun AjukanLowonganScreen(
                                 viewModel.onLamaranEvent(LamaranFormEvent.TanggalLahirChanged(it))
                             },
                             label = { Text("Tanggal Lahir") },
-                            placeholder = { Text("20/03/2005") }, // Contoh format
+                            placeholder = { Text("20/03/2005") },
                             trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
@@ -211,7 +211,7 @@ fun AjukanLowonganScreen(
                             label = { Text("Nomor Aktif (WhatsApp)") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            // ERROR HANDLING
+                           
                             isError = state.nomorAktifError != null,
                             supportingText = {
                                 if (state.nomorAktifError != null) {

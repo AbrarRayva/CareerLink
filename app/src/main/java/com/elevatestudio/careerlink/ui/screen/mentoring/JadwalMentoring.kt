@@ -50,7 +50,7 @@ fun JadwalMentoringScreen(navController: NavController) {
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // Search Bar
+           
             OutlinedTextField(
                 value = searchText,
                 onValueChange = { searchText = it },
@@ -61,7 +61,7 @@ fun JadwalMentoringScreen(navController: NavController) {
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            // Daftar Sesi
+           
             LazyColumn(contentPadding = PaddingValues(16.dp)) {
                 items(sessions) { session ->
                     MentoringItem(session) {

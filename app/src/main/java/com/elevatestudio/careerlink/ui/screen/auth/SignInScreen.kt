@@ -20,7 +20,7 @@ import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
 import com.elevatestudio.careerlink.ui.viewmodel.AuthState
 import com.elevatestudio.careerlink.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.delay // WAJIB IMPORT INI
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 
@@ -38,19 +38,19 @@ fun SignInScreen(
     val password = remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // --- LOGIC BARU: PESAN DULU, BARU PINDAH ---
+   
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Success -> {
-                // 1. Tampilkan Pesan Login Sukses
+               
                 launch {
                     snackbarHostState.showSnackbar("Login berhasil! Selamat datang.")
                 }
 
-                // 2. Tunggu 1.5 detik
+               
                 delay(1500)
 
-                // 3. Pindah ke Home
+               
                 onSignInSuccess()
                 viewModel.resetState()
             }

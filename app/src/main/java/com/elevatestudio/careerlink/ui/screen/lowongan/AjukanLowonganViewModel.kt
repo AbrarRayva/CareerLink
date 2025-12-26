@@ -82,7 +82,7 @@ class AjukanLowonganViewModel : ViewModel() {
 
     private val dateRegex = Regex("""^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$""")
 
-    // Regex HP (Tetap sama)
+   
     private val phoneRegex = Regex("""^(\+62)8[1-9][0-9]{6,11}$""")
 
     fun onLamaranEvent(event: LamaranFormEvent) {
@@ -168,7 +168,7 @@ class AjukanLowonganViewModel : ViewModel() {
                     val rawDate = currentState.tanggalLahir
                     val dateParts = rawDate.split("/")
                     val apiDate = if (dateParts.size == 3) {
-                        "${dateParts[2]}-${dateParts[1]}-${dateParts[0]}" // YYYY-MM-DD
+                        "${dateParts[2]}-${dateParts[1]}-${dateParts[0]}"
                     } else rawDate
 
                     val response = RetrofitClient.instance.ajukanLowongan(
@@ -178,7 +178,7 @@ class AjukanLowonganViewModel : ViewModel() {
                         recommendation_letter = recPart,
                         portfolio = portfolioPart,
                         fullName = createPart(currentState.namaLengkap),
-                        dob = createPart(apiDate), // <-- Kirim tanggal yg sudah dibalik
+                        dob = createPart(apiDate),
                         gender = createPart(currentState.jenisKelamin),
                         education = createPart(currentState.pendidikan),
                         major = createPart(currentState.programStudi),
