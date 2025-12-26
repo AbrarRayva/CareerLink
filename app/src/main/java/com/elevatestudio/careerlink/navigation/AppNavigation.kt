@@ -27,19 +27,22 @@ import com.elevatestudio.careerlink.ui.screen.lowongan.AjukanLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.NotifikasiScreen
+import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLamaranScreen
+import com.elevatestudio.careerlink.ui.screen.lowongan.RiwayatLamaranScreen
+
 // --- IMPORT MODUL MENTORING ---
 import com.elevatestudio.careerlink.ui.screen.mentoring.BookingMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.CatatanMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.DetailMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.JadwalMentoringScreen
+
 // --- IMPORT MODUL KURSUS ---
-import com.elevatestudio.careerlink.ui.screen.kursus.BadgeScanScreen
-import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DashboardKursusScreen
+import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DetailKursusScreen
+import com.elevatestudio.careerlink.ui.screen.kursus.BadgeScanScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.RegistrationSuccessScreen
-import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLamaranScreen
-import com.elevatestudio.careerlink.ui.screen.lowongan.RiwayatLamaranScreen
+import com.elevatestudio.careerlink.ui.screen.kursus.StatusKursusScreen // 🔥 IMPORT PENTING
 
 object Routes {
     const val SPLASH = "splash"
@@ -63,12 +66,16 @@ object Routes {
     fun detailLowongan(lowonganId: String) = "detail_lowongan/$lowonganId"
     fun ajukanLowongan(lowonganId: String) = "ajukan_lowongan/$lowonganId"
     fun detailLamaran(id: String) = "detail_lamaran/$id"
+
+    // RUTE KURSUS
     const val KURSUS_DASHBOARD = "kursus_dashboard"
     const val DAFTAR_KURSUS = "daftar_kursus"
     const val REGISTRATION_SUCCESS = "registration_success"
     const val BADGE_SCAN = "badge_scan"
     const val DETAIL_KURSUS = "detail_kursus/{kursusId}"
+    const val STATUS_KURSUS = "status_kursus/{type}" // Route baru
     fun detailKursus(kursusId: String) = "detail_kursus/$kursusId"
+
     const val JADWAL_MENTORING = "jadwal_mentoring"
     const val DETAIL_MENTORING = "detail_mentoring/{sessionId}"
     const val BOOKING_MENTORING = "booking_mentoring/{sessionId}"
@@ -80,7 +87,6 @@ object Routes {
 fun AppNavigation(startJobId: String? = null) {
     val navController = rememberNavController()
 
-    // Animasi
     val slideIn = slideInHorizontally(animationSpec = tween(300), initialOffsetX = { it })
     val slideOut = slideOutHorizontally(animationSpec = tween(300), targetOffsetX = { -it })
     val popIn = slideInHorizontally(animationSpec = tween(300), initialOffsetX = { -it })
@@ -103,9 +109,7 @@ fun AppNavigation(startJobId: String? = null) {
                     navController.navigate(Routes.DAFTAR_LOWONGAN) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
-
                     navController.navigate(Routes.detailLowongan(startJobId))
-
                 } else {
                     navController.navigate(Routes.ONBOARDING) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
@@ -186,7 +190,6 @@ fun AppNavigation(startJobId: String? = null) {
 
         composable(route = Routes.AJUKAN_LOWONGAN, arguments = listOf(navArgument("lowonganId") { type = NavType.StringType })) { bse ->
             val lowonganId = bse.arguments?.getString("lowonganId") ?: ""
-            // Disini ViewModel akan di-init otomatis oleh 'viewModel()' di dalam AjukanLowonganScreen
             AjukanLowonganScreen(
                 lowonganId = lowonganId,
                 onBackClick = { navController.popBackStack() },
@@ -202,7 +205,7 @@ fun AppNavigation(startJobId: String? = null) {
             RiwayatLamaranScreen(
                 onBackClick = { navController.popBackStack() },
                 onDetailClick = { appId ->
-                    navController.navigate(Routes.detailLamaran(appId)) // Pindah ke Detail
+                    navController.navigate(Routes.detailLamaran(appId))
                 }
             )
         }
@@ -227,6 +230,10 @@ fun AppNavigation(startJobId: String? = null) {
             )
         }
 
+        // ==========================================
+        // 🔥 MODUL KURSUS 🔥
+        // ==========================================
+
         composable(Routes.KURSUS_DASHBOARD) {
             DashboardKursusScreen(
                 onNavigate = { route ->
@@ -235,6 +242,10 @@ fun AppNavigation(startJobId: String? = null) {
                         "lowongan" -> navController.navigate(Routes.DAFTAR_LOWONGAN)
                         "mentor" -> navController.navigate(Routes.JADWAL_MENTORING)
                         "kursus" -> { /* Stay here */ }
+
+                        // 🔥 NAVIGASI STATISTIK KLIK 🔥
+                        "status_active" -> navController.navigate("status_kursus/Active")
+                        "status_completed" -> navController.navigate("status_kursus/Completed")
                     }
                 },
                 onNavigateToDaftarKursus = { navController.navigate(Routes.DAFTAR_KURSUS) },
@@ -250,24 +261,54 @@ fun AppNavigation(startJobId: String? = null) {
             )
         }
 
-        composable(route = Routes.DETAIL_KURSUS, arguments = listOf(navArgument("kursusId") { type = NavType.StringType })) { bse ->
+        composable(
+            route = Routes.DETAIL_KURSUS,
+            arguments = listOf(navArgument("kursusId") { type = NavType.StringType })
+        ) { bse ->
+            val id = bse.arguments?.getString("kursusId") ?: ""
             DetailKursusScreen(
-                kursusId = bse.arguments?.getString("kursusId") ?: "",
+                kursusId = id,
                 onBackClick = { navController.popBackStack() },
                 onDaftarSuccess = {
-                    navController.navigate(Routes.REGISTRATION_SUCCESS) { popUpTo(bse.destination.id) { inclusive = true } }
+                    navController.navigate(Routes.REGISTRATION_SUCCESS) {
+                        popUpTo(Routes.DETAIL_KURSUS) { inclusive = true }
+                    }
                 }
             )
         }
 
-        composable(Routes.REGISTRATION_SUCCESS, enterTransition = { fadeIn(tween(500)) }) {
-            RegistrationSuccessScreen(onKembaliClick = { navController.navigate(Routes.KURSUS_DASHBOARD) })
+        composable(Routes.REGISTRATION_SUCCESS) {
+            RegistrationSuccessScreen(
+                onKembaliClick = {
+                    navController.navigate(Routes.KURSUS_DASHBOARD) {
+                        popUpTo(Routes.KURSUS_DASHBOARD) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Routes.BADGE_SCAN) {
-            BadgeScanScreen(onBackClick = { navController.popBackStack() })
+            BadgeScanScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
+        // 🔥 Screen Baru: Status Kursus 🔥
+        composable(
+            route = "status_kursus/{type}",
+            arguments = listOf(navArgument("type") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val type = backStackEntry.arguments?.getString("type") ?: "Active"
+            StatusKursusScreen(
+                statusType = type,
+                onBackClick = { navController.popBackStack() },
+                onDetailClick = { id -> navController.navigate(Routes.detailKursus(id)) }
+            )
+        }
+
+        // ==========================================
+        // MODUL MENTORING
+        // ==========================================
         composable(Routes.JADWAL_MENTORING) {
             JadwalMentoringScreen(navController)
         }

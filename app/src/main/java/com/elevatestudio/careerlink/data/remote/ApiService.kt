@@ -1,35 +1,14 @@
 package com.elevatestudio.careerlink.data.remote
 
-import com.elevatestudio.careerlink.data.model.ApplicationDetail
-import com.elevatestudio.careerlink.data.model.AuthRequest
-import com.elevatestudio.careerlink.data.model.AuthResponse
-
-import com.elevatestudio.careerlink.data.model.GeneralResponse
-import com.elevatestudio.careerlink.data.model.LowonganDetail
-import com.elevatestudio.careerlink.data.model.LowonganItem
-import com.elevatestudio.careerlink.data.model.NotifikasiItem
-import com.elevatestudio.careerlink.data.model.RiwayatItem
-
-import com.elevatestudio.careerlink.data.model.KursusDashboardData
-import com.elevatestudio.careerlink.data.model.KursusDetail
-import com.elevatestudio.careerlink.data.model.KursusItem
+import com.elevatestudio.careerlink.data.model.*
 import okhttp3.MultipartBody
-import retrofit2.http.Multipart
-import retrofit2.http.Part
-
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
 import okhttp3.RequestBody
-
+import retrofit2.Response
+import retrofit2.http.*
 
 interface ApiService {
 
+    // --- AUTHENTICATION ---
     @POST("api/auth/register")
     suspend fun register(@Body body: AuthRequest): Response<AuthResponse>
 
@@ -42,6 +21,7 @@ interface ApiService {
         @Body data: Map<String, String>
     ): Response<GeneralResponse>
 
+    // --- JOBS / LOWONGAN ---
     @GET("api/jobs")
     suspend fun getLowongan(
         @Query("search") search: String? = null,
@@ -82,42 +62,88 @@ interface ApiService {
         @Path("id") applicationId: String
     ): Response<ApplicationDetail>
 
-    @GET("notifikasi")
+    // --- NOTIFIKASI ---
+    // Pastikan backend sudah menyediakan endpoint ini, jika belum, sesuaikan dengan backend temanmu
+    // Berdasarkan diskusi sebelumnya, kita asumsikan backend sudah support ini.
+    @GET("api/notifications")
     suspend fun getNotifikasi(): Response<List<NotifikasiItem>>
 
-    @DELETE("notifikasi/{id}")
+    @DELETE("api/notifications/{id}")
     suspend fun hapusNotifikasi(
         @Path("id") notifikasiId: String
     ): Response<GeneralResponse>
 
 
+    // ==========================================
+    // 🔥 MODUL KURSUS (UPDATED) 🔥
+    // Sesuai ANDROID_TEAM_API_DOCS.md
+    // ==========================================
 
-    @GET("/kursus/dashboard")
-    suspend fun getKursusDashboard(): Response<KursusDashboardData>
+    // 1. Ambil Kursus Rekomendasi (Dashboard)
+    @GET("api/courses/recommended")
+    suspend fun getRecommendedCourses(
+        @Header("Authorization") token: String? = null // Boleh null, tapi lebih baik diisi
+    ): Response<KursusListResponse>
 
-    @GET("/kursus")
-    suspend fun getSemuaKursus(
-        @Query("search") query: String?
-    ): Response<List<KursusItem>>
+    // 2. Ambil Daftar Semua Kursus (Bisa Search)
+    // Endpoint: GET /api/courses
+    @GET("api/courses")
+    suspend fun getCourses(
+        @Query("search") search: String? = null
+    ): Response<KursusListResponse>
 
-    @GET("/kursus/{id}")
-    suspend fun getDetailKursus(
-        @Path("id") kursusId: String
-    ): Response<KursusDetail>
+    // 3. Ambil Detail Kursus
+    // Endpoint: GET /api/courses/:courseId
+    @GET("api/courses/{id}")
+    suspend fun getCourseDetail(
+        @Path("id") id: String
+    ): Response<KursusDetailResponse>
 
-    @POST("/kursus/{id}/daftar")
-    suspend fun daftarKursus(
-        @Path("id") kursusId: String
+    // 4. Daftar Kursus (Enroll) - BUTUH TOKEN
+    // Endpoint: POST /api/courses/:courseId/enroll
+    @POST("api/courses/{id}/enroll")
+    suspend fun enrollCourse(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
     ): Response<GeneralResponse>
+
+    // 5. Lihat Kursus Saya (My Enrolled Courses) - BUTUH TOKEN
+    // Endpoint: GET /api/courses/enrolled/list
+    // Di data/remote/ApiService.kt atau ApiClient.kt
+
+    @GET("api/courses/enrolled/list")
+    suspend fun getMyEnrolledCourses(
+        @Header("Authorization") token: String,
+        @Query("status") status: String? = null // Tambahkan parameter status ini
+    ): Response<KursusListResponse>
+
+    // --- BADGE & SCAN ---
+
+    // 6. Lihat Badge Saya (Dashboard) - BUTUH TOKEN
+    // Endpoint: GET /api/badges/list
+    @GET("api/badges/list")
+    suspend fun getMyBadges(
+        @Header("Authorization") token: String
+    ): Response<BadgeListResponse> // Pastikan buat model BadgeListResponse
+
+    // 7. Scan QR Badge - BUTUH TOKEN
+    // Endpoint: POST /api/badges/scan-qr
+    @POST("api/badges/scan-qr")
+    suspend fun scanBadge(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, Int> // Body: {"course_id": 5}
+    ): Response<GeneralResponse>
+
+    // 8. Statistik Kursus (Dashboard) - BUTUH TOKEN
+    // Endpoint: GET /api/courses/stats/overview
+    @GET("api/courses/stats/overview")
+    suspend fun getCourseStats(
+        @Header("Authorization") token: String
+    ): Response<StatsResponse> // Perlu buat model StatsResponse jika ingin dipakai
 
     @Multipart
-    @POST("/kursus/badge/upload")
+    @POST("api/badges/upload") // Pastikan backend nanti punya route ini
     suspend fun uploadBadge(
         @Part file: MultipartBody.Part
-    ): Response<GeneralResponse>
-
-    @POST("/kursus/badge/scan")
-    suspend fun scanBadge(
-        @Body qrData: Map<String, String>
     ): Response<GeneralResponse>
 }

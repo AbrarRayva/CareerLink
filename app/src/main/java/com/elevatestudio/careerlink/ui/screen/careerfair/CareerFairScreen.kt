@@ -1,6 +1,7 @@
 package com.elevatestudio.careerlink.ui.screen.careerfair
 
 import android.net.Uri
+import androidx.compose.material3.TopAppBarDefaults  // <- Ini obat error 'topAppBarColors'
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

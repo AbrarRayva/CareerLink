@@ -331,6 +331,15 @@ fun AjukanLowonganScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TopAppBarDefaults.topAppBarColors(
+    containerColor: Color,
+    titleContentColor: Color,
+    navigationIconContentColor: Color
+): TopAppBarColors {
+    return TODO("Provide the return value")
+}
+
 // ... (FormDropdownMenu, FileUploadBox, getFileName tetap sama seperti sebelumnya) ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -354,8 +363,8 @@ fun FormDropdownMenu(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded)
             },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
             ),
             modifier = Modifier
                 .fillMaxWidth()

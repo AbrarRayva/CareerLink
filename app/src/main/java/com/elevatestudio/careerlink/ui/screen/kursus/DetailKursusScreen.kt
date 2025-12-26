@@ -1,39 +1,36 @@
-// Lokasi: ui/screen/kursus/DetailKursusScreen.kt
 package com.elevatestudio.careerlink.ui.screen.kursus
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.* import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.elevatestudio.careerlink.data.model.KursusDetail
+import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.ui.components.ConfirmationDialog
 import com.elevatestudio.careerlink.ui.components.PrimaryButton
 import com.elevatestudio.careerlink.ui.screen.lowongan.SubmissionState
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
-
-// Data dummy
-val dummyDetailKursus = KursusDetail(
-    id = "1",
-    penyelenggara = "UPT Kewirausahaan dan Karir Unand",
-    judul = "Cara Membuat CV",
-    deskripsi = "Dalam dunia kerja yang kompetitif, CV (Curriculum Vitae) adalah kunci pertama untuk membuka peluang karier. Course ini dirancang untuk membantu kamu menyusun CV yang menarik, profesional, dan sesuai standar industri. Melalui langkah-langkah praktis, kamu akan belajar bagaimana menonjolkan pengalaman, keterampilan, dan prestasi agar menarik perhatian perekrut.",
-    lokasi = "Online (via Zoom)",
-    tanggal = "20-21 November 2025",
-    waktu = "19.00–21.00 WIB",
-    level = "Pemula – Menengah",
-    kapasitas = "100 peserta"
-)
+import com.elevatestudio.careerlink.utils.UserPreferences
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,18 +40,41 @@ fun DetailKursusScreen(
     onBackClick: () -> Unit,
     onDaftarSuccess: () -> Unit
 ) {
-    val kursus = dummyDetailKursus
-
+    val context = LocalContext.current
+    val detailState by viewModel.detailState.collectAsState()
     val submissionState by viewModel.submissionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
     var showDaftarDialog by remember { mutableStateOf(false) }
+    var userToken by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        scope.launch {
+            val prefs = UserPreferences(context)
+            userToken = prefs.authToken.first() ?: ""
+        }
+    }
+
+    LaunchedEffect(kursusId) {
+        viewModel.getDetailKursus(kursusId)
+    }
 
     LaunchedEffect(submissionState) {
         if (submissionState is SubmissionState.Error) {
-            snackbarHostState.showSnackbar((submissionState as SubmissionState.Error).message)
+            val msg = (submissionState as SubmissionState.Error).message
+            // 🔥 HANDLING ERROR LEBIH PINTAR 🔥
+            if (msg.contains("sudah terdaftar", ignoreCase = true)) {
+                // Kalau udah daftar, tampilkan pesan sukses aja atau info
+                snackbarHostState.showSnackbar("Anda sudah terdaftar di kursus ini ✅")
+            } else {
+                snackbarHostState.showSnackbar(msg)
+            }
             viewModel.resetSubmissionState()
         }
         if (submissionState is SubmissionState.Success) {
+            // Tampilkan Dialog Sukses
+            // Dialog ini nanti memicu onDaftarSuccess -> Pindah halaman
             onDaftarSuccess()
             viewModel.resetSubmissionState()
         }
@@ -65,7 +85,7 @@ fun DetailKursusScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Daftar Kursus") },
+                title = { Text("Detail Kursus") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
@@ -73,77 +93,137 @@ fun DetailKursusScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AppBackground,
-                    navigationIconContentColor = Color.Black // Sesuaikan warna ikon
+                    navigationIconContentColor = Color.Black
                 )
             )
         },
         bottomBar = {
-            PrimaryButton(
-                text = "DAFTAR SEKARANG",
-                onClick = { showDaftarDialog = true },
-                enabled = submissionState != SubmissionState.Loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            )
+            if (detailState is KursusDetailUiState.Success) {
+                PrimaryButton(
+                    text = "DAFTAR SEKARANG",
+                    onClick = { showDaftarDialog = true },
+                    enabled = submissionState != SubmissionState.Loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 80.dp) // Space buat tombol
         ) {
-            // 1. Judul
-            item {
-                Text(kursus.penyelenggara, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-                Text(
-                    text = kursus.judul,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // 2. Deskripsi
-            item {
-                Text("Deskripsi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(kursus.deskripsi, style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // 3. Detail
-            item {
-                Text("Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                KursusInfoRow(icon = Icons.Default.LocationOn, text = kursus.lokasi)
-                KursusInfoRow(icon = Icons.Default.CalendarToday, text = kursus.tanggal)
-                KursusInfoRow(icon = Icons.Default.AccessTime, text = kursus.waktu)
-                KursusInfoRow(icon = Icons.Default.BarChart, text = kursus.level)
-                KursusInfoRow(icon = Icons.Default.People, text = kursus.kapasitas)
+            when (detailState) {
+                is KursusDetailUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = PrimaryGreen
+                    )
+                }
+                is KursusDetailUiState.Error -> {
+                    Text(
+                        text = (detailState as KursusDetailUiState.Error).message,
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                is KursusDetailUiState.Success -> {
+                    val kursus = (detailState as KursusDetailUiState.Success).data
+                    KursusContent(kursus)
+                }
             }
         }
     }
 
-    // Dialog Konfirmasi
     if (showDaftarDialog) {
         ConfirmationDialog(
             onDismiss = { showDaftarDialog = false },
             onConfirm = {
                 showDaftarDialog = false
-                viewModel.daftarKursus(kursusId)
+                if (userToken.isNotEmpty()) {
+                    viewModel.daftarKursus(kursusId, userToken)
+                }
             },
             title = "Daftar untuk kursus ini?",
             icon = { Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryGreen) }
         )
     }
 
-    // Dialog Loading
     if (submissionState == SubmissionState.Loading) {
         Dialog(onDismissRequest = {}) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = PrimaryGreen)
+        }
+    }
+}
+
+@Composable
+fun KursusContent(kursus: KursusDetail) {
+    val fullImageUrl = if (kursus.imageUrl != null && !kursus.imageUrl.startsWith("http")) {
+        "${ApiClient.BASE_URL}${kursus.imageUrl}"
+    } else {
+        kursus.imageUrl
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 80.dp)
+    ) {
+        item {
+            if (fullImageUrl != null) {
+                AsyncImage(
+                    model = fullImageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        item {
+            Text(kursus.providerName, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+            Text(
+                text = kursus.title,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        item {
+            Text("Deskripsi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(kursus.description ?: "-", style = MaterialTheme.typography.bodyLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        item {
+            Text("Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val lokasiDisplay = if (kursus.locationDetail != null) {
+                "${kursus.locationType} (${kursus.locationDetail})"
+            } else {
+                kursus.locationType
+            }
+
+            KursusInfoRow(icon = Icons.Default.LocationOn, text = lokasiDisplay)
+
+            if (kursus.dateStart != null) {
+                KursusInfoRow(icon = Icons.Default.CalendarToday, text = kursus.dateStart.take(10))
+            }
+
+            if (kursus.quota != null) {
+                KursusInfoRow(icon = Icons.Default.People, text = "${kursus.quota} Peserta")
+            }
         }
     }
 }

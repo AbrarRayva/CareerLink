@@ -2,24 +2,23 @@ package com.elevatestudio.careerlink.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import com.elevatestudio.careerlink.R
-import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
-import com.elevatestudio.careerlink.ui.theme.TextGray
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthTextField(
     value: String,
@@ -29,7 +28,6 @@ fun AuthTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     modifier: Modifier = Modifier
 ) {
-    // State buat ngatur visibility password (nampilin/sembunyiin)
     val isPasswordVisible = remember { mutableStateOf(false) }
 
     OutlinedTextField(
@@ -38,32 +36,21 @@ fun AuthTextField(
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            focusedIndicatorColor = PrimaryGreen,
-            focusedLabelColor = PrimaryGreen,
-            cursorColor = PrimaryGreen
-        ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        // Logika buat nampilin/sembunyiin password
+        // SAYA HAPUS BAGIAN COLORS DULU AGAR TIDAK ERROR
+        // Biarkan pakai warna default Android dulu
+
         visualTransformation = if (isPassword && !isPasswordVisible.value) {
-            PasswordVisualTransformation() // Kalo password & disembunyiin -> jadi bintang-bintang
+            PasswordVisualTransformation()
         } else {
-            VisualTransformation.None // Kalo bukan password / ditampilin -> teks biasa
+            VisualTransformation.None
         },
         trailingIcon = {
             if (isPassword) {
-                // Tombol ikon mata
                 IconButton(onClick = { isPasswordVisible.value = !isPasswordVisible.value }) {
                     Icon(
-                        painter = if (isPasswordVisible.value) {
-                            painterResource(id = R.drawable.ic_eye_on) // Mata kebuka
-                        } else {
-                            painterResource(id = R.drawable.ic_eye_off) // Mata ketutup
-                        },
-                        contentDescription = "Toggle password visibility",
-                        tint = TextGray
+                        imageVector = if (isPasswordVisible.value) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = "Toggle password visibility"
                     )
                 }
             }
