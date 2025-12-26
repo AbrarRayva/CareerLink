@@ -10,16 +10,12 @@ data class LowonganItem(
     @SerializedName("job_type") val jobType: String,
     @SerializedName("salary_range") val salaryRange: String,
     @SerializedName("logo_url") val logoUrl: String?,
-
-    // Trik GSON:
-    // Kita tampung data asli (yang mungkin null) di variabel private
     @SerializedName("duration")
     private val _duration: String?,
 
     @SerializedName("semester_requirement")
     private val _semester: String?
 ) {
-    // Lalu kita buat variabel publik yang punya logika anti-null
     val duration: String
         get() = if (_duration.isNullOrEmpty()) "Tidak disebutkan" else _duration
 

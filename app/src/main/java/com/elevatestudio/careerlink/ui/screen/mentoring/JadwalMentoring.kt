@@ -1,5 +1,7 @@
 package com.elevatestudio.careerlink.ui.screen.mentoring
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,26 +11,33 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.elevatestudio.careerlink.navigation.Routes
+import com.elevatestudio.careerlink.ui.components.AppBottomNavBar
 import com.elevatestudio.careerlink.viewmodel.MentoringSession
 import com.elevatestudio.careerlink.viewmodel.MentoringViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JadwalMentoringScreen(navController: NavController) {
+fun JadwalMentoringScreen(
+    navController: NavController,
+    onNavigate: (String) -> Unit
+) {
     val viewModel: MentoringViewModel = viewModel()
     val sessions by viewModel.mentoringSessions.collectAsState()
     var searchText by remember { mutableStateOf("") }
@@ -43,14 +52,22 @@ fun JadwalMentoringScreen(navController: NavController) {
                     }
                 }
             )
+        },
+        bottomBar = {
+            AppBottomNavBar(
+                currentRoute = "mentor",
+                onItemSelected = { route ->
+                    // ✅ cukup lempar ke host/nav utama (biar konsisten kaya modul lain)
+                    onNavigate(route)
+                }
+            )
         }
     ) { padding ->
         Column(
-            Modifier
+            modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            // Search Bar
             OutlinedTextField(
                 value = searchText,
                 onValueChange = { searchText = it },
@@ -61,9 +78,18 @@ fun JadwalMentoringScreen(navController: NavController) {
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            // Daftar Sesi
+            // (optional) filter sederhana di UI
+            val filtered = remember(searchText, sessions) {
+                if (searchText.isBlank()) sessions
+                else sessions.filter {
+                    it.nama.contains(searchText, ignoreCase = true) ||
+                            it.pekerjaan.contains(searchText, ignoreCase = true) ||
+                            it.tempat.contains(searchText, ignoreCase = true)
+                }
+            }
+
             LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                items(sessions) { session ->
+                items(filtered) { session ->
                     MentoringItem(session) {
                         navController.navigate("detail_mentoring/${session.id}")
                     }
@@ -134,30 +160,22 @@ fun InfoRow(label: String, value: String, boldValue: Boolean = false) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailMentoringScreen(navController: NavController, sessionId: String?) {
+fun DetailMentoringScreen(
+    navController: NavController,
+    sessionId: String?
+) {
     val viewModel: MentoringViewModel = viewModel()
     val session = viewModel.getSessionById(sessionId)
 
     if (session == null) {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Jadwal Mentoring") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                        }
-                    }
-                )
-            }
-        ) { padding ->
+        Scaffold { padding ->
             Box(
-                Modifier
+                modifier = Modifier
                     .padding(padding)
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Sesi tidak ditemukan.", style = MaterialTheme.typography.headlineSmall)
+                Text("Sesi tidak ditemukan")
             }
         }
         return
@@ -166,7 +184,7 @@ fun DetailMentoringScreen(navController: NavController, sessionId: String?) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Jadwal Mentoring") },
+                title = { Text("Detail Mentoring") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
@@ -176,13 +194,15 @@ fun DetailMentoringScreen(navController: NavController, sessionId: String?) {
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate("booking_mentoring/${session.id}") },
+                onClick = {
+                    navController.navigate("booking_mentoring/${session.id}")
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .height(56.dp)
+                    .height(52.dp)
             ) {
-                Text("Book Now", style = MaterialTheme.typography.titleMedium)
+                Text("Daftar Mentoring")
             }
         }
     ) { padding ->
@@ -193,7 +213,12 @@ fun DetailMentoringScreen(navController: NavController, sessionId: String?) {
         ) {
             HeaderSection(session)
             DetailsSection(session)
-            MapsSection(session.mapsCoordinates)
+
+            // ✅ maps section rapi
+            MapsSection(
+                coordinates = session.mapsCoordinates,
+                locationName = session.tempat
+            )
         }
     }
 }
@@ -236,7 +261,12 @@ fun DetailInfoRow(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = Color.White
         )
-        Text(": ", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(
+            ": ",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White
+        )
         Text(value, style = MaterialTheme.typography.bodyLarge, color = Color.White)
     }
 }
@@ -276,23 +306,56 @@ fun DetailsSection(session: MentoringSession) {
 }
 
 @Composable
-fun MapsSection(coordinates : String) {
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 16.dp)
-    ) {
+fun MapsSection(coordinates: String?, locationName: String?) {
+    val context = LocalContext.current
+    val latLng = parseLatLng(coordinates)
+
+    Column(modifier = Modifier.padding(16.dp)) {
         Text("Maps", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.LightGray),
-            contentAlignment = Alignment.Center
+
+        if (latLng == null) {
+            Text("Lokasi belum tersedia")
+            return@Column
+        }
+
+        val (lat, lng) = latLng
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Icon(Icons.Filled.LocationOn, contentDescription = "Lokasi", tint = Color.Red, modifier = Modifier.size(48.dp))
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(locationName ?: "Lokasi Mentoring", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(6.dp))
+                Text("Koordinat: $lat, $lng", style = MaterialTheme.typography.bodySmall)
+
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        val uri = Uri.parse("https://www.google.com/maps?q=$lat,$lng")
+                        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Buka di Google Maps")
+                }
+            }
         }
     }
+}
+
+private fun parseLatLng(coordinates: String?): Pair<Double, Double>? {
+    if (coordinates.isNullOrBlank()) return null
+    val parts = coordinates.split(",").map { it.trim() }
+    if (parts.size != 2) return null
+
+    val lat = parts[0].toDoubleOrNull() ?: return null
+    val lng = parts[1].toDoubleOrNull() ?: return null
+    return lat to lng
 }

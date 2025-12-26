@@ -8,7 +8,7 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.elevatestudio.careerlink.MainActivity // Pastikan import MainActivity kamu benar
+import com.elevatestudio.careerlink.MainActivity
 import com.elevatestudio.careerlink.R
 import com.elevatestudio.careerlink.data.remote.RetrofitClient
 import com.elevatestudio.careerlink.utils.UserPreferences
@@ -21,18 +21,14 @@ import kotlinx.coroutines.launch
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
-    // 1. Dijalankan saat HP pertama kali dapat Token atau Token berubah
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Kita harus kirim token ini ke Backend agar Backend tau kemana harus kirim notif
         sendTokenToBackend(token)
     }
 
-    // 2. Dijalankan saat ada pesan masuk (Saat aplikasi dibuka)
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        // Tampilkan notifikasi
         remoteMessage.notification?.let {
             showNotification(it.title ?: "Info", it.body ?: "Ada pesan baru")
         }
@@ -51,7 +47,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Ganti icon notif kamu
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
@@ -60,7 +56,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Untuk Android Oreo ke atas wajib pake Channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -74,7 +69,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendTokenToBackend(token: String) {
-        // Panggil API update FCM Token (Nanti kita buat di Backend)
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val context = applicationContext
@@ -82,7 +76,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val userToken = prefs.authToken.first()
 
                 if (!userToken.isNullOrEmpty()) {
-                    // Panggil API (Kita buat nanti di ApiService)
                     RetrofitClient.instance.updateFcmToken("Bearer $userToken", mapOf("fcm_token" to token))
                 }
             } catch (e: Exception) {

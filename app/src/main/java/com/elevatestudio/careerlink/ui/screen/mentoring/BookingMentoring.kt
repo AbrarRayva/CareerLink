@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,10 +15,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookingMentoringScreen(navController: NavController) { // Parameter diubah menjadi _sessionId
-    // State untuk setiap input field
+fun BookingMentoringScreen(
+    navController: NavController,
+    sessionId: String? = null
+) {
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
     var nama by remember { mutableStateOf("") }
     var tanggalLahir by remember { mutableStateOf("") }
     var jenisKelamin by remember { mutableStateOf("") }
@@ -33,7 +37,6 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
                 title = { Text("Booking Mentoring") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // PERBAIKAN: Menggunakan ikon AutoMirrored
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
@@ -49,88 +52,151 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
-            Text("Harap Lengkapi Data Diri Anda", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 16.dp))
+            Text(
+                "Harap Lengkapi Data Diri Anda",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
 
-            // Pemanggilan fungsi Composable yang sudah dipindahkan keluar
-            FormField(label = "Nama Lengkap", value = nama, onValueChange = { nama = it })
-            FormField(label = "Tanggal Lahir", value = tanggalLahir, onValueChange = { tanggalLahir = it })
-            FormField(label = "Jenis Kelamin", value = jenisKelamin, onValueChange = { jenisKelamin = it })
-            FormField(label = "Pendidikan", value = pendidikan, onValueChange = { pendidikan = it })
-            FormField(label = "Program Studi", value = programStudi, onValueChange = { programStudi = it })
+            LabeledTextField(
+                label = "Nama Lengkap",
+                value = nama,
+                onValueChange = { nama = it }
+            )
 
-            // Input Nomor Aktif dengan Prefix +62
+            LabeledTextField(
+                label = "Tanggal Lahir",
+                value = tanggalLahir,
+                onValueChange = { tanggalLahir = it }
+            )
+
+            LabeledTextField(
+                label = "Jenis Kelamin",
+                value = jenisKelamin,
+                onValueChange = { jenisKelamin = it }
+            )
+
+            LabeledTextField(
+                label = "Pendidikan",
+                value = pendidikan,
+                onValueChange = { pendidikan = it }
+            )
+
+            LabeledTextField(
+                label = "Program Studi",
+                value = programStudi,
+                onValueChange = { programStudi = it }
+            )
+
+            // Nomor Aktif +62
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Nomor Aktif", modifier = Modifier.width(120.dp), style = MaterialTheme.typography.bodyLarge)
-                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Text("+62", modifier = Modifier.padding(end = 4.dp), style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray))
-                    OutlinedTextField(
-                        value = nomorAktif,
-                        onValueChange = { nomorAktif = it },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        )
-                    )
-                }
+                Text(
+                    "Nomor Aktif",
+                    modifier = Modifier.width(120.dp),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text("+62", color = Color.Gray)
+                Spacer(Modifier.width(8.dp))
+
+                OutlinedTextField(
+                    value = nomorAktif,
+                    onValueChange = { nomorAktif = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(Modifier.height(16.dp))
 
-            Text("Harapan Tentang Mentoring ini", modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "Harapan Tentang Mentoring ini",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             OutlinedTextField(
                 value = harapan,
                 onValueChange = { harapan = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 150.dp),
-                minLines = 5,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                )
+                minLines = 5
             )
 
             Spacer(Modifier.height(32.dp))
 
-            // Tombol "Book Now"
             Button(
-                onClick = { /* Lakukan validasi dan proses booking */ },
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                onClick = {
+                    // TODO: simpan booking ke backend
+                    showSuccessDialog = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
                 Text("Book Now", style = MaterialTheme.typography.titleMedium)
             }
+
             Spacer(Modifier.height(16.dp))
         }
     }
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Berhasil") },
+            text = { Text("Anda telah berhasil mendaftar sesi mentoring") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSuccessDialog = false
+
+                        val sid = sessionId ?: return@TextButton
+
+                        navController.navigate("catatan_mentoring/$sid") {
+                            popUpTo("booking_mentoring/$sid") { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 }
 
-// PERBAIKAN: Fungsi Helper Composable dipindahkan keluar dari BookingMentoringScreen
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormField(label: String, value: String, onValueChange: (String) -> Unit, keyboardType: KeyboardType = KeyboardType.Text) {
+private fun LabeledTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, modifier = Modifier.width(120.dp), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            label,
+            modifier = Modifier.width(120.dp),
+            style = MaterialTheme.typography.bodyLarge
+        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                focusedBorderColor = MaterialTheme.colorScheme.primary
-            )
+            modifier = Modifier.weight(1f)
         )
     }
 }

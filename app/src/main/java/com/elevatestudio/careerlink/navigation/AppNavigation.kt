@@ -75,6 +75,7 @@ object Routes {
     const val DETAIL_MENTORING = "detail_mentoring/{sessionId}"
     const val BOOKING_MENTORING = "booking_mentoring/{sessionId}"
     const val CATATAN_MENTORING = "catatan_mentoring/{sessionId}"
+    fun catatanMentoring(sessionId: String) = "catatan_mentoring/$sessionId"
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -283,16 +284,42 @@ fun AppNavigation(startJobId: String? = null) {
 
         // --- MENTORING ---
         composable(Routes.JADWAL_MENTORING) {
-            JadwalMentoringScreen(navController)
+            JadwalMentoringScreen(
+                navController = navController,
+                onNavigate = { route ->
+                    when (route) {
+                        "home" -> navController.navigate(Routes.CAREER_FAIR)
+                        "event" -> navController.navigate(Routes.CAREER_FAIR)
+                        "kursus" -> navController.navigate(Routes.KURSUS_DASHBOARD)
+                        "mentor" -> { /* sudah di mentoring */ }
+                        "lowongan" -> navController.navigate(Routes.DAFTAR_LOWONGAN)
+                    }
+                }
+            )
         }
-        composable(route = Routes.DETAIL_MENTORING, arguments = listOf(navArgument("sessionId") { type = NavType.StringType })) { bse ->
-            DetailMentoringScreen(navController, bse.arguments?.getString("sessionId"))
+
+        composable(
+            route = Routes.DETAIL_MENTORING,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
+            DetailMentoringScreen(navController, sessionId)
         }
-        composable(route = Routes.BOOKING_MENTORING, arguments = listOf(navArgument("sessionId") { type = NavType.StringType })) {
-            BookingMentoringScreen(navController)
+
+        composable(
+            route = "booking_mentoring/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
+            BookingMentoringScreen(navController, sessionId)
         }
-        composable(Routes.CATATAN_MENTORING) {
-            CatatanMentoringScreen(navController)
+
+        composable(
+            route = Routes.CATATAN_MENTORING,
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
+            CatatanMentoringScreen(navController = navController, sessionId = sessionId)
         }
     }
 }

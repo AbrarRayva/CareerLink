@@ -4,9 +4,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Attachment
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,17 +20,15 @@ import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CatatanMentoringScreen(navController: NavController) {
+fun CatatanMentoringScreen(navController: NavController, sessionId: String? = null) {
     var catatan by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
-            // PERBAIKAN: Mengganti TopAppBar dengan CenterAlignedTopAppBar
             CenterAlignedTopAppBar(
                 title = { Text("Catatan Mentoring") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // PERBAIKAN: Menggunakan ikon AutoMirrored
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
@@ -44,44 +44,80 @@ fun CatatanMentoringScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // PERBAIKAN: FontWeight sudah diimpor
-            Text("Catatan", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Catatan",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(Modifier.height(8.dp))
 
-            // Kotak Input Catatan
+            // Container catatan
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .border(1.dp, Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                    .padding(8.dp)
             ) {
-                // Input Text Area
+                // Area input (kasih padding bottom supaya tidak ketutup ikon)
                 BasicTextField(
                     value = catatan,
                     onValueChange = { catatan = it },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                        .padding(bottom = 48.dp), // ✅ ruang untuk ikon footer
                     textStyle = MaterialTheme.typography.bodyLarge,
                     decorationBox = { innerTextField ->
-                        if (catatan.isEmpty()) {
-                            Text("Tulis catatan Anda di sini...", color = Color.Gray.copy(alpha = 0.6f))
+                        if (catatan.isBlank()) {
+                            Text(
+                                "Tulis catatan Anda di sini...",
+                                color = Color.Gray.copy(alpha = 0.6f)
+                            )
                         }
                         innerTextField()
                     }
                 )
 
-                // Ikon di bagian bawah
+                // Footer ikon (fixed di bawah)
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.Start
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Filled.Attachment, contentDescription = "Lampiran", modifier = Modifier.size(24.dp).padding(end = 16.dp))
-                    Icon(Icons.Filled.Edit, contentDescription = "Gambar", modifier = Modifier.size(24.dp).padding(end = 16.dp))
-                    Icon(Icons.Filled.Image, contentDescription = "Gambar", modifier = Modifier.size(24.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Attachment,
+                        contentDescription = "Lampiran",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Image,
+                        contentDescription = "Gambar",
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Optional: tombol simpan (kalau kamu mau)
+            Button(
+                onClick = {
+                    // TODO: simpan catatan ke backend pakai sessionId
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Simpan Catatan")
             }
         }
     }

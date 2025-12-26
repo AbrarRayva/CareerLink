@@ -1,26 +1,21 @@
-// Lokasi: data/remote/ApiService.kt
 package com.elevatestudio.careerlink.data.remote
 
-// --- IMPORT UNTUK OTENTIKASI ---
 import com.elevatestudio.careerlink.data.model.ApplicationDetail
 import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
 
-// --- IMPORT UNTUK MODUL LOWONGAN ---
 import com.elevatestudio.careerlink.data.model.GeneralResponse
 import com.elevatestudio.careerlink.data.model.LowonganDetail
 import com.elevatestudio.careerlink.data.model.LowonganItem
 import com.elevatestudio.careerlink.data.model.NotifikasiItem
 import com.elevatestudio.careerlink.data.model.RiwayatItem
 
-// --- IMPORT UNTUK MODUL KURSUS ---
 import com.elevatestudio.careerlink.data.model.KursusDashboardData
 import com.elevatestudio.careerlink.data.model.KursusDetail
 import com.elevatestudio.careerlink.data.model.KursusItem
 import okhttp3.MultipartBody
 import retrofit2.http.Multipart
 import retrofit2.http.Part
-// --- SELESAI IMPORT KURSUS ---
 
 import retrofit2.Response
 import retrofit2.http.Body
@@ -35,23 +30,18 @@ import okhttp3.RequestBody
 
 interface ApiService {
 
-    // --- Otentikasi ---
     @POST("api/auth/register")
     suspend fun register(@Body body: AuthRequest): Response<AuthResponse>
 
     @POST("api/auth/login")
     suspend fun login(@Body body: AuthRequest): Response<AuthResponse>
 
-    // --- [BARU] UPDATE FCM TOKEN ---
-    // Dipanggil saat aplikasi dibuka untuk update token notifikasi
     @POST("api/auth/update-fcm")
     suspend fun updateFcmToken(
         @Header("Authorization") token: String,
-        @Body data: Map<String, String> // Mengirim {"fcm_token": "xyz..."}
+        @Body data: Map<String, String>
     ): Response<GeneralResponse>
 
-
-    // --- Modul Lowongan ---
     @GET("api/jobs")
     suspend fun getLowongan(
         @Query("search") search: String? = null,
@@ -69,17 +59,9 @@ interface ApiService {
     suspend fun ajukanLowongan(
         @Header("Authorization") token: String,
         @Path("id") lowonganId: String,
-
-        // 1. CV (Wajib)
         @Part cv: MultipartBody.Part,
-
-        // 2. Surat Rekomendasi (WAJIB)
         @Part recommendation_letter: MultipartBody.Part,
-
-        // 3. Portofolio (Opsional)
         @Part portfolio: MultipartBody.Part?,
-
-        // 4. Data Diri (Teks)
         @Part("full_name") fullName: RequestBody,
         @Part("date_of_birth") dob: RequestBody,
         @Part("gender") gender: RequestBody,
@@ -89,7 +71,6 @@ interface ApiService {
         @Part("about_me") aboutMe: RequestBody
     ): Response<GeneralResponse>
 
-    // 4. Riwayat Lamaran
     @GET("api/jobs/history/my-applications")
     suspend fun getRiwayatLamaran(
         @Header("Authorization") token: String
@@ -110,7 +91,6 @@ interface ApiService {
     ): Response<GeneralResponse>
 
 
-    // --- MODUL KURSUS ---
 
     @GET("/kursus/dashboard")
     suspend fun getKursusDashboard(): Response<KursusDashboardData>
@@ -140,4 +120,12 @@ interface ApiService {
     suspend fun scanBadge(
         @Body qrData: Map<String, String>
     ): Response<GeneralResponse>
+
+    interface MentoringApi {
+        @GET("api/mentoring/schedules")
+        suspend fun getSchedules(): List<MentoringScheduleDto>
+
+        @POST("api/mentoring/bookings")
+        suspend fun book(@Body body: Map<String, Any>): Response<Map<String, Any>>
+    }
 }

@@ -1,11 +1,8 @@
-// Lokasi: data/model/KursusModels.kt
 package com.elevatestudio.careerlink.data.model
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Model untuk item di Daftar Kursus & Rekomendasi
- */
+
 data class KursusItem(
     val id: String,
     val penyelenggara: String,
@@ -15,9 +12,6 @@ data class KursusItem(
     val imageUrl: String
 )
 
-/**
- * Model untuk layar Detail Kursus (Daftar Kelas)
- */
 data class KursusDetail(
     val id: String,
     val penyelenggara: String,
@@ -30,9 +24,6 @@ data class KursusDetail(
     val kapasitas: String
 )
 
-/**
- * Model untuk "Course dan Badge Saya" di Dashboard
- */
 data class BadgeItem(
     val id: String,
     @SerializedName("image_url")
@@ -40,9 +31,6 @@ data class BadgeItem(
     val title: String
 )
 
-/**
- * Model untuk nampung semua data di Dashboard Kursus
- */
 data class KursusDashboardData(
     val username: String,
     val badges: List<BadgeItem>,
