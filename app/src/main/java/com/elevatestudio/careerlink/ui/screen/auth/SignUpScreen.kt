@@ -2,6 +2,8 @@ package com.elevatestudio.careerlink.ui.screen.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,39 +20,46 @@ import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.TextBlack
 import com.elevatestudio.careerlink.ui.viewmodel.AuthViewModel
+import com.elevatestudio.careerlink.ui.viewmodel.AuthState
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onNavigateToSignIn: () -> Unit,
-    onSignUpClicked: (String, String, String) -> Unit // email, pass, confirmPass
+    onSignUpSuccess: () -> Unit
 ) {
     val viewModel: AuthViewModel = viewModel()
+    val authState by viewModel.authState.collectAsState()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // State buat nampung ketikan
+    val name = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
-    val confirmPassword = remember { mutableStateOf("") }
 
-    // State untuk snackbar
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    var message by remember { mutableStateOf<String?>(null) }
-
-    // Observasi hasil register dari ViewModel
-    val authMessage by viewModel.authMessage.collectAsState()
-
-    // Jika message berubah, tampilkan snackbar otomatis
-    LaunchedEffect(authMessage) {
-        authMessage?.let {
-            message = it
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(it)
+   
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Pendaftaran Berhasil! Silakan Masuk.")
+                }
+                viewModel.resetState()
+                onSignUpSuccess()
             }
+            is AuthState.Error -> {
+                val errorMsg = (authState as AuthState.Error).message
+                scope.launch {
+                    snackbarHostState.showSnackbar(errorMsg)
+                }
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
-    // Scaffold agar snackbar bisa muncul
+   
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
@@ -58,28 +67,26 @@ fun SignUpScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppBackground)
-                .padding(horizontal = 24.dp, vertical = 32.dp)
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Logo
             AppLogo()
             Spacer(modifier = Modifier.height(24.dp))
-
-            // 2. Judul
-            Text(
-                text = "Daftarkan Akun Anda",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextBlack
-            )
+            Text("Buat Akun Baru", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 3. Form Input
+            AuthTextField(
+                value = name.value,
+                onValueChange = { name.value = it },
+                label = "Nama Lengkap"
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             AuthTextField(
                 value = email.value,
                 onValueChange = { email.value = it },
-                label = "Alamat Email",
+                label = "Email",
                 keyboardType = KeyboardType.Email
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -89,57 +96,28 @@ fun SignUpScreen(
                 label = "Kata Sandi",
                 isPassword = true
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            AuthTextField(
-                value = confirmPassword.value,
-                onValueChange = { confirmPassword.value = it },
-                label = "Konfirmasi Kata Sandi",
-                isPassword = true
-            )
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 4. Tombol Daftar
             PrimaryButton(
-                text = "Daftar",
+                text = if (authState is AuthState.Loading) "Memproses..." else "Daftar",
                 onClick = {
-                    when {
-                        email.value.isBlank() || password.value.isBlank() || confirmPassword.value.isBlank() -> {
-                            message = "Semua kolom wajib diisi"
-                        }
-                        password.value.length < 6 -> {
-                            message = "Kata sandi minimal 6 karakter"
-                        }
-                        password.value != confirmPassword.value -> {
-                            message = "Kata sandi dan konfirmasi tidak cocok"
-                        }
-                        else -> {
-                            message = "Sedang memproses pendaftaran..."
-                            // Panggil ViewModel (email dikirim sebagai username)
-                            viewModel.register(email.value, password.value)
-                            onSignUpClicked(email.value, password.value, confirmPassword.value)
+                    if (name.value.isNotEmpty() && email.value.isNotEmpty() && password.value.isNotEmpty()) {
+                        viewModel.register(name.value, email.value, password.value)
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Harap isi semua kolom!")
                         }
                     }
                 },
+                enabled = authState !is AuthState.Loading
             )
 
-            // Tampilkan pesan teks kecil di bawah tombol
-            message?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = it,
-                    color = if (it.contains("gagal", true) || it.contains("tidak", true))
-                        MaterialTheme.colorScheme.error
-                    else PrimaryGreen,
-                    fontSize = 14.sp
-                )
-            }
-
-            // 5. Tombol buat yang udah punya akun
-            Spacer(modifier = Modifier.weight(1f)) // Dorong ke bawah
+            Spacer(modifier = Modifier.height(24.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "Sudah punya akun?", color = TextBlack)
                 TextButton(onClick = onNavigateToSignIn) {
-                    Text(text = "Masuk di sini", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                    Text(text = "Masuk", color = PrimaryGreen, fontWeight = FontWeight.Bold)
                 }
             }
         }

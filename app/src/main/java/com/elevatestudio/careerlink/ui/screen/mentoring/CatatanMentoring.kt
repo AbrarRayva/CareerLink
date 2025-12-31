@@ -23,12 +23,12 @@ fun CatatanMentoringScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            // PERBAIKAN: Mengganti TopAppBar dengan CenterAlignedTopAppBar
+           
             CenterAlignedTopAppBar(
                 title = { Text("Catatan Mentoring") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // PERBAIKAN: Menggunakan ikon AutoMirrored
+                       
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
@@ -44,11 +44,11 @@ fun CatatanMentoringScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // PERBAIKAN: FontWeight sudah diimpor
+           
             Text("Catatan", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
 
-            // Kotak Input Catatan
+           
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -56,7 +56,7 @@ fun CatatanMentoringScreen(navController: NavController) {
                     .border(1.dp, Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                     .padding(8.dp)
             ) {
-                // Input Text Area
+               
                 BasicTextField(
                     value = catatan,
                     onValueChange = { catatan = it },
@@ -70,7 +70,7 @@ fun CatatanMentoringScreen(navController: NavController) {
                     }
                 )
 
-                // Ikon di bagian bawah
+               
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomStart)

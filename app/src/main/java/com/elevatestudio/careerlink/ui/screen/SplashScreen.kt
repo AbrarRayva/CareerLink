@@ -13,21 +13,21 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    // Ini parameter fungsi biar bisa ngasih tau "Splash udah selesai, pindah layar!"
+   
     onSplashFinished: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBackground), // Pakai warna background kita
-        contentAlignment = Alignment.Center // Biar logonya di tengah
+            .background(AppBackground),
+        contentAlignment = Alignment.Center
     ) {
-        AppLogo(modifier = Modifier.fillMaxSize(0.3f)) // Logo dibikin 30% ukuran layar
+        AppLogo(modifier = Modifier.fillMaxSize(0.3f))
 
-        // Efek ini jalan sekali pas layar kebuka
+       
         LaunchedEffect(key1 = true) {
-            delay(2000L) // Tunggu 2 detik (pura-pura loading)
-            onSplashFinished() // Panggil fungsi buat pindah layar
+            delay(2000L)
+            onSplashFinished()
         }
     }
 }

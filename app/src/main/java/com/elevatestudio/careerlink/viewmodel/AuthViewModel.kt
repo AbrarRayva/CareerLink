@@ -1,48 +1,125 @@
 package com.elevatestudio.careerlink.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.elevatestudio.careerlink.data.model.AuthRequest
 import com.elevatestudio.careerlink.data.model.AuthResponse
-import com.elevatestudio.careerlink.data.remote.ApiClient
-import kotlinx.coroutines.launch
+import com.elevatestudio.careerlink.data.model.UserResponse
+import android.app.Application
+import android.content.Context
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.elevatestudio.careerlink.data.remote.RetrofitClient
+import com.elevatestudio.careerlink.utils.UserPreferences
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
 
-    private val _authMessage = MutableStateFlow<String?>(null)
-    val authMessage = _authMessage.asStateFlow()
+sealed class AuthState {
+    object Idle : AuthState()
+    object Loading : AuthState()
+    object Success : AuthState()
+    data class Error(val message: String) : AuthState()
+}
 
-    fun register(username: String, password: String) {
+class AuthViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val userPreferences = UserPreferences(application)
+
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    val authState: StateFlow<AuthState> = _authState
+
+   
+    fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
+            _authState.value = AuthState.Loading
             try {
-                val response = ApiClient.instance.register(AuthRequest(username, password))
+               
+                val request = AuthRequest(email = email, password = pass, fullName = name, role = "student")
+                val response = RetrofitClient.instance.register(request)
+
                 if (response.isSuccessful) {
-                    val body = response.body()
-                    _authMessage.value = body?.message ?: "Registrasi berhasil"
+                    _authState.value = AuthState.Success
                 } else {
-                    _authMessage.value = response.errorBody()?.string() ?: "Registrasi gagal"
+                    val errorMsg = response.errorBody()?.string() ?: "Register Gagal"
+                    _authState.value = AuthState.Error("Register Gagal: ${response.message()}")
                 }
             } catch (e: Exception) {
-                _authMessage.value = "Gagal konek ke server: ${e.localizedMessage}"
+                _authState.value = AuthState.Error("Error: ${e.message}")
             }
         }
     }
 
-    fun login(username: String, password: String) {
+   
+    fun login(email: String, pass: String, context: Context) {
         viewModelScope.launch {
+            _authState.value = AuthState.Loading
             try {
-                val response = ApiClient.instance.login(AuthRequest(username, password))
-                if (response.isSuccessful) {
-                    val body: AuthResponse? = response.body()
-                    _authMessage.value = body?.message ?: "Login berhasil"
+                val request = AuthRequest(email = email, password = pass)
+                val response = RetrofitClient.instance.login(request)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+
+                   
+                    val userResponse: UserResponse? = body.user
+
+                    if (userResponse != null) {
+                        val token = body.token ?: ""
+
+                       
+                       
+                        val userId = userResponse.id.toString()
+                        val userName = userResponse.name
+
+                       
+                        userPreferences.saveAuthToken(token, userId)
+                        userPreferences.saveUserName(userName)
+
+                        updateFcmToken(token)
+
+                        _authState.value = AuthState.Success
+                    } else {
+                        _authState.value = AuthState.Error("Data user kosong")
+                    }
                 } else {
-                    _authMessage.value = response.errorBody()?.string() ?: "Login gagal"
+                    _authState.value = AuthState.Error("Login Gagal! Cek email/password.")
                 }
             } catch (e: Exception) {
-                _authMessage.value = "Gagal konek ke server: ${e.localizedMessage}"
+                _authState.value = AuthState.Error("Koneksi Error: ${e.message}")
             }
         }
+    }
+
+   
+    private fun updateFcmToken(authToken: String) {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.e("AuthViewModel", "Gagal ambil token FCM", task.exception)
+                return@addOnCompleteListener
+            }
+
+           
+            val fcmToken = task.result
+            Log.d("AuthViewModel", "FCM Token didapat: $fcmToken")
+
+           
+            viewModelScope.launch {
+                try {
+                    RetrofitClient.instance.updateFcmToken(
+                        token = "Bearer $authToken",
+                        data = mapOf("fcm_token" to fcmToken)
+                    )
+                    Log.d("AuthViewModel", "✅ Token FCM berhasil diupdate ke server!")
+                } catch (e: Exception) {
+                    Log.e("AuthViewModel", "❌ Gagal update token ke server: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun resetState() {
+        _authState.value = AuthState.Idle
     }
 }

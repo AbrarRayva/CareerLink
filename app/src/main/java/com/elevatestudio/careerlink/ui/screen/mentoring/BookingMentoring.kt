@@ -17,8 +17,8 @@ import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun BookingMentoringScreen(navController: NavController) { // Parameter diubah menjadi _sessionId
-    // State untuk setiap input field
+fun BookingMentoringScreen(navController: NavController) {
+   
     var nama by remember { mutableStateOf("") }
     var tanggalLahir by remember { mutableStateOf("") }
     var jenisKelamin by remember { mutableStateOf("") }
@@ -33,7 +33,7 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
                 title = { Text("Booking Mentoring") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // PERBAIKAN: Menggunakan ikon AutoMirrored
+                       
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
@@ -53,14 +53,14 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
         ) {
             Text("Harap Lengkapi Data Diri Anda", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 16.dp))
 
-            // Pemanggilan fungsi Composable yang sudah dipindahkan keluar
+           
             FormField(label = "Nama Lengkap", value = nama, onValueChange = { nama = it })
             FormField(label = "Tanggal Lahir", value = tanggalLahir, onValueChange = { tanggalLahir = it })
             FormField(label = "Jenis Kelamin", value = jenisKelamin, onValueChange = { jenisKelamin = it })
             FormField(label = "Pendidikan", value = pendidikan, onValueChange = { pendidikan = it })
             FormField(label = "Program Studi", value = programStudi, onValueChange = { programStudi = it })
 
-            // Input Nomor Aktif dengan Prefix +62
+           
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -100,9 +100,9 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
 
             Spacer(Modifier.height(32.dp))
 
-            // Tombol "Book Now"
+           
             Button(
-                onClick = { /* Lakukan validasi dan proses booking */ },
+                onClick = {  },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text("Book Now", style = MaterialTheme.typography.titleMedium)
@@ -112,7 +112,8 @@ fun BookingMentoringScreen(navController: NavController) { // Parameter diubah m
     }
 }
 
-// PERBAIKAN: Fungsi Helper Composable dipindahkan keluar dari BookingMentoringScreen
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormField(label: String, value: String, onValueChange: (String) -> Unit, keyboardType: KeyboardType = KeyboardType.Text) {
     Row(

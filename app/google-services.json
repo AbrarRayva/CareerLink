@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "278651897362",
+    "project_id": "careerlink-f0a89",
+    "storage_bucket": "careerlink-f0a89.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:278651897362:android:0b365ef5cc02f7eea53acb",
+        "android_client_info": {
+          "package_name": "com.elevatestudio.careerlink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAISkifJQvMqVZ8pKJWEB1G9znM-fm8fc4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

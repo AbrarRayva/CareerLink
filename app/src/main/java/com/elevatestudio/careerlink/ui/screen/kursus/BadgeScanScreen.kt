@@ -1,11 +1,9 @@
-// Lokasi: ui/screen/kursus/BadgeScanScreen.kt
 package com.elevatestudio.careerlink.ui.screen.kursus
 
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,24 +11,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.elevatestudio.careerlink.ui.components.PrimaryButton
-import com.elevatestudio.careerlink.ui.components.SuccessDialog
-import com.elevatestudio.careerlink.ui.screen.lowongan.SubmissionState
 import com.elevatestudio.careerlink.ui.theme.AppBackground
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
-import kotlinx.coroutines.launch
+import com.elevatestudio.careerlink.utils.FileUtils
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,142 +38,111 @@ fun BadgeScanScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     val submissionState by viewModel.submissionState.collectAsState()
+    val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
-    val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+   
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            Toast.makeText(context, "Fitur upload belum siap", Toast.LENGTH_SHORT).show()
-            // TODO: Konversi URI ke MultipartBody.Part dan panggil viewModel.uploadSertifikat(file)
+            val file = FileUtils.getFileFromUri(context, uri)
+            if (file != null) {
+               
+                val mimeType = when {
+                    file.name.endsWith(".png", true) -> "image/png"
+                    file.name.endsWith(".pdf", true) -> "application/pdf"
+                    else -> "image/jpeg"
+                }
+
+                val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
+
+               
+                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+                viewModel.uploadBadge(body)
+            } else {
+                Toast.makeText(context, "Gagal membaca file", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    // --- ANIMASI UNTUK IKON QR ---
-    val infiniteTransition = rememberInfiniteTransition(label = "qr-pulse")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "qr-alpha"
-    )
-    // --- SELESAI ANIMASI ---
-
     LaunchedEffect(submissionState) {
         if (submissionState is SubmissionState.Error) {
-            snackbarHostState.showSnackbar((submissionState as SubmissionState.Error).message)
+            val msg = (submissionState as SubmissionState.Error).message
+           
+            if (msg.contains("<!DOCTYPE html>", true)) {
+                Toast.makeText(context, "Gagal: Format file ditolak server. Pastikan JPG/PNG/PDF.", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
             viewModel.resetSubmissionState()
         }
     }
 
     Scaffold(
         containerColor = AppBackground,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Course Badge Scan") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryGreen,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                title = { Text("Scan Badge") },
+                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Kembali") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryGreen, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
+            modifier = Modifier.padding(padding).padding(24.dp).fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // 1. Teks
-                Text(
-                    text = "Pindai QR Code Sertifikat Anda di sini",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center
-                )
+                Text("Pindai QR Code", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(32.dp))
-
-                // 2. Box QR
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .aspectRatio(1f)
-                        .border(2.dp, SecondaryGreen, RoundedCornerShape(16.dp))
+                    modifier = Modifier.size(250.dp).border(2.dp, SecondaryGreen, RoundedCornerShape(16.dp))
                         .clickable {
-                            Toast.makeText(context, "Fitur Scan QR belum siap", Toast.LENGTH_SHORT).show()
-                            // TODO: Panggil qrLauncher.launch()
+                            scanner.startScan().addOnSuccessListener { barcode ->
+                                val code = barcode.rawValue?.toIntOrNull()
+                                if (code != null) viewModel.scanQrBadge(code)
+                                else Toast.makeText(context, "QR Tidak Valid", Toast.LENGTH_SHORT).show()
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan QR",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .alpha(alpha), // Terapkan animasi alpha
-                        tint = SecondaryGreen
-                    )
+                    Icon(Icons.Default.QrCodeScanner, null, Modifier.size(100.dp), tint = SecondaryGreen)
+                    Text("Ketuk untuk Scan", Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp), color = Color.Gray)
                 }
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "atau unggah file sertifikat",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray
-                )
             }
 
-            // 3. Tombol
-            Column(modifier = Modifier.fillMaxWidth()) {
-                PrimaryButton(
-                    text = "Unggah File",
-                    onClick = {
-                        fileLauncher.launch("*/*") // Bisa pilih PDF, JPG, PNG
-                    }
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            Column {
+                Text("Atau unggah sertifikat (PDF/JPG)", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = onBackClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SecondaryGreen.copy(alpha = 0.6f),
-                        contentColor = Color.Black
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                   
+                    onClick = { fileLauncher.launch("*/*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
                 ) {
-                    Text("Kembali")
+                    Text("Unggah File", color = Color.White)
                 }
             }
         }
     }
 
-    // Dialog Loading
-    if (submissionState == SubmissionState.Loading) {
-        Dialog(onDismissRequest = {}) {
-            CircularProgressIndicator()
-        }
-    }
-
-    // Dialog Sukses (pop-up)
-    if (submissionState == SubmissionState.Success) {
-        // Kita PAKE ULANG SuccessDialog dari modul lowongan
-        SuccessDialog(
-            onDismiss = { viewModel.resetSubmissionState() },
-            onGoToHome = {
-                viewModel.resetSubmissionState()
-                onBackClick() // Cukup kembali ke layar sebelumnya
+    if (submissionState is SubmissionState.Success) {
+        AlertDialog(
+            onDismissRequest = {},
+            icon = { Icon(Icons.Default.Verified, null, tint = PrimaryGreen) },
+            title = { Text("Berhasil!") },
+            text = { Text("Badge berhasil ditambahkan.") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.resetSubmissionState()
+                    onBackClick()
+                }, colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)) { Text("OK") }
             }
         )
+    }
+
+    if (submissionState == SubmissionState.Loading) {
+        Dialog(onDismissRequest = {}) { CircularProgressIndicator(color = PrimaryGreen) }
     }
 }

@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 class MentoringViewModel : ViewModel() {
 
-    // Dummy Data
     private val allSessions = listOf(
         MentoringSession(
             id = "s001",
@@ -36,12 +35,8 @@ class MentoringViewModel : ViewModel() {
         )
     )
 
-    // State untuk daftar sesi yang ditampilkan di UI (Cari Jadwal Mentoring)
     private val _mentoringSessions = MutableStateFlow(allSessions)
     val mentoringSessions: StateFlow<List<MentoringSession>> = _mentoringSessions
-
-
-    // Mendapatkan detail sesi berdasarkan ID.
     fun getSessionById(sessionId: String?): MentoringSession? {
         return allSessions.find { it.id == sessionId }
     }
