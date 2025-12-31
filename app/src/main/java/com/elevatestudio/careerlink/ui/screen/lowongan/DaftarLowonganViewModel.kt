@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-// 🔥 DUA IMPORT INI WAJIB ADA 🔥
+
 import com.elevatestudio.careerlink.data.model.LowonganDetail
 import com.elevatestudio.careerlink.data.model.LowonganItem
 import com.elevatestudio.careerlink.data.remote.ApiClient

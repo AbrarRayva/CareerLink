@@ -102,7 +102,7 @@ fun BookingMentoringScreen(navController: NavController) {
 
            
             Button(
-                onClick = { /* Lakukan validasi dan proses booking */ },
+                onClick = {  },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text("Book Now", style = MaterialTheme.typography.titleMedium)
@@ -112,7 +112,7 @@ fun BookingMentoringScreen(navController: NavController) {
     }
 }
 
-// PERBAIKAN: Fungsi Helper Composable dipindahkan keluar dari BookingMentoringScreen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormField(label: String, value: String, onValueChange: (String) -> Unit, keyboardType: KeyboardType = KeyboardType.Text) {

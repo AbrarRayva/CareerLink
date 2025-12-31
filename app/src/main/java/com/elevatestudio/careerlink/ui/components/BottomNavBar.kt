@@ -1,8 +1,8 @@
-// Lokasi: ui/components/BottomNavBar.kt
+
 package com.elevatestudio.careerlink.ui.components
 
 import androidx.compose.material.icons.Icons
-// --- INI IMPORT YANG BARU DITAMBAH ---
+
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Event
@@ -13,7 +13,7 @@ import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Work
-// --- SELESAI IMPORT IKON ---
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.elevatestudio.careerlink.ui.theme.PrimaryGreen
 import com.elevatestudio.careerlink.ui.theme.SecondaryGreen
 
-// Data class buat item di navbar
+
 data class NavItem(
     val label: String,
     val selectedIcon: ImageVector,
@@ -33,7 +33,7 @@ data class NavItem(
     val route: String
 )
 
-// List item navbar sesuai urutan kamu
+
 val navItems = listOf(
     NavItem("Event", Icons.Filled.Event, Icons.Outlined.Event, "event"),
     NavItem("Kursus", Icons.Filled.Book, Icons.Outlined.Book, "kursus"),

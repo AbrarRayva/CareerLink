@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-// 🔥 IMPORT INI YANG HILANG
+
 import com.elevatestudio.careerlink.data.model.NotifikasiItem
 import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.ui.theme.AppBackground

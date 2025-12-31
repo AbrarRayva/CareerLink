@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.first
 import android.util.Log
 import kotlinx.coroutines.launch
 
-// --- FUNGSI UTAMA LAYAR DASHBOARD ---
+
 @Composable
 fun DashboardKursusScreen(
     onNavigate: (String) -> Unit,
@@ -150,7 +150,7 @@ fun DashboardKursusScreen(
     }
 }
 
-// --- KOMPONEN PENDUKUNG (HELPER) ---
+
 
 @Composable
 fun BadgeCircleItem(item: BadgeItem) {

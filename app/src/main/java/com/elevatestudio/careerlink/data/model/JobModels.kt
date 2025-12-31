@@ -2,7 +2,7 @@ package com.elevatestudio.careerlink.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// 1. Lowongan Item (List)
+
 data class LowonganItem(
     val id: String,
     val title: String,
@@ -13,7 +13,7 @@ data class LowonganItem(
     @SerializedName("created_at") val createdAt: String?
 )
 
-// 2. Lowongan Detail (Detail Pekerjaan)
+
 data class LowonganDetail(
     val id: String,
     val title: String,
@@ -25,7 +25,7 @@ data class LowonganDetail(
     @SerializedName("salary_range") val salary: String?
 )
 
-// 3. Riwayat Lamaran
+
 data class RiwayatItem(
     val id: String,
     @SerializedName("job_title") val jobTitle: String,
@@ -34,7 +34,7 @@ data class RiwayatItem(
     @SerializedName("applied_at") val appliedAt: String
 )
 
-// 4. Detail Lamaran (Status Lamaran Detail)
+
 data class ApplicationDetail(
     val id: String,
     @SerializedName("job_title") val jobTitle: String,
@@ -56,7 +56,7 @@ data class ApplicationDetail(
     @SerializedName("portfolio_url") val portfolioUrl: String? = ""
 )
 
-// 5. Notifikasi
+
 data class NotifikasiItem(
     val id: String,
     val title: String,

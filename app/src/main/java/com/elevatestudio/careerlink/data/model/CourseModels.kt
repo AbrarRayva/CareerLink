@@ -2,7 +2,7 @@ package com.elevatestudio.careerlink.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// --- WRAPPERS ---
+
 data class CourseResponse(
     val success: Boolean,
     val message: String?,
@@ -25,7 +25,7 @@ data class GeneralResponse(
     val message: String
 )
 
-// --- DATA CLASSES ---
+
 data class Course(
     val id: Int,
     val title: String,

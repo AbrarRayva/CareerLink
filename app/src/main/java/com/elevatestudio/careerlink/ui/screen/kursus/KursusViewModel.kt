@@ -204,13 +204,13 @@ class KursusViewModel(application: Application) : AndroidViewModel(application) 
             if (token.isEmpty()) return@launch
             try {
                 val cleanStatus = if (status.contains("completed")) "Completed" else "Active"
-                Log.d("KursusVM", "Fetching courses status: $cleanStatus") // Cek status yg dikirim
+                Log.d("KursusVM", "Fetching courses status: $cleanStatus") 
 
                 val res = apiService.getEnrolledCourses("Bearer $token", cleanStatus)
 
                 if (res.isSuccessful) {
                     val data = res.body()?.data ?: emptyList()
-                    Log.d("KursusVM", "Got ${data.size} courses") // Cek jumlah data
+                    Log.d("KursusVM", "Got ${data.size} courses") 
                     _myCourses.value = data
                 } else {
                     Log.e("KursusVM", "Gagal fetch: ${res.code()} ${res.message()}")

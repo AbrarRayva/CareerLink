@@ -14,10 +14,10 @@ import com.elevatestudio.careerlink.ui.screen.SplashScreen
 import com.elevatestudio.careerlink.ui.screen.auth.ForgotPasswordScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignInScreen
 import com.elevatestudio.careerlink.ui.screen.auth.SignUpScreen
-// --- IMPORT MODUL CAREER FAIR ---
 
 
-// --- IMPORT MODUL LOWONGAN ---
+
+
 import com.elevatestudio.careerlink.ui.screen.lowongan.AjukanLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DaftarLowonganScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLowonganScreen
@@ -25,13 +25,13 @@ import com.elevatestudio.careerlink.ui.screen.lowongan.NotifikasiScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.DetailLamaranScreen
 import com.elevatestudio.careerlink.ui.screen.lowongan.RiwayatLamaranScreen
 
-// --- IMPORT MODUL MENTORING ---
+
 import com.elevatestudio.careerlink.ui.screen.mentoring.BookingMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.CatatanMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.DetailMentoringScreen
 import com.elevatestudio.careerlink.ui.screen.mentoring.JadwalMentoringScreen
 
-// --- IMPORT MODUL KURSUS ---
+
 import com.elevatestudio.careerlink.ui.screen.kursus.DashboardKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DaftarKursusScreen
 import com.elevatestudio.careerlink.ui.screen.kursus.DetailKursusScreen
@@ -216,7 +216,7 @@ fun AppNavigation(startJobId: String? = null) {
                         "home" -> navController.navigate(Routes.CAREER_FAIR)
                         "lowongan" -> navController.navigate(Routes.DAFTAR_LOWONGAN)
                         "mentor" -> navController.navigate(Routes.JADWAL_MENTORING)
-                        "kursus" -> { /* Stay here */ }
+                        "kursus" -> {  }
 
                        
                         "status_active" -> navController.navigate("status_kursus/Active")

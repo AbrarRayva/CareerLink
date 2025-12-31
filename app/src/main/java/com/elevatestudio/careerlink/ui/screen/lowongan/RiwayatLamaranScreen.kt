@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-// 🔥 IMPORT INI YANG HILANG
+
 import com.elevatestudio.careerlink.data.model.RiwayatItem
 import com.elevatestudio.careerlink.data.remote.ApiClient
 import com.elevatestudio.careerlink.ui.theme.AppBackground

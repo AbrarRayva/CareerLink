@@ -1,4 +1,4 @@
-// Lokasi: ui/screen/OnboardingScreen.kt
+
 package com.elevatestudio.careerlink.ui.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -38,7 +38,7 @@ data class OnboardingPage(
     val description: String
 )
 
-// Ini data buat 3 halaman onboarding
+
 val onboardingPages = listOf(
     OnboardingPage(
         imageRes = R.drawable.img_onboarding_1,
@@ -128,7 +128,7 @@ fun OnboardingScreen(
     }
 }
 
-// Composable buat nampilin 1 halaman onboarding
+
 @Composable
 fun OnboardingPageItem(page: OnboardingPage) {
     Column(
@@ -165,7 +165,7 @@ fun OnboardingPageItem(page: OnboardingPage) {
 }
 
 
-// --- komponen indikator titik titik ---
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HorizontalPagerIndicator(

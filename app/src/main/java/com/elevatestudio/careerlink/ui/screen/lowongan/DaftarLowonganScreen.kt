@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-// 🔥 IMPORT INI WAJIB ADA 🔥
+
 import com.elevatestudio.careerlink.data.model.LowonganItem
 
 @OptIn(ExperimentalMaterial3Api::class)

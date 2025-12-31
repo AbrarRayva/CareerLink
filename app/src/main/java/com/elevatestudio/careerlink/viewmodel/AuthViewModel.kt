@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-// State untuk UI
+
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
